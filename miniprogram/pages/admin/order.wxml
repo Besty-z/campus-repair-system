@@ -1,0 +1,58 @@
+<!-- 工单管理（ADMIN） -->
+<view class="admin-order-page">
+  <!-- 筛选区 -->
+  <view class="filter-bar">
+    <scroll-view scroll-x class="tabs" enhanced show-scrollbar="{{false}}">
+      <view class="tab {{statusIndex === index ? 'tab-active' : ''}}"
+            wx:for="{{statusTabs}}" wx:key="value"
+            data-index="{{index}}" bindtap="onStatusTabChange">{{item.label}}</view>
+    </scroll-view>
+    <view class="filter-row">
+      <picker class="filter-picker" range="{{locationTypes}}" range-key="label"
+              value="{{locationTypeIndex}}" bindchange="onLocationTypeChange">
+        <view class="filter-picker-text">{{locationTypes[locationTypeIndex].label}} ▾</view>
+      </picker>
+      <picker class="filter-picker" range="{{categories}}" range-key="name"
+              value="{{categoryIndex}}" bindchange="onCategoryChange">
+        <view class="filter-picker-text">{{categories[categoryIndex].name}} ▾</view>
+      </picker>
+    </view>
+    <view class="search-row">
+      <input class="search-input" placeholder="搜索位置 / 描述 / 工单号" confirm-type="search"
+             value="{{keyword}}" bindinput="onKeywordInput" bindconfirm="onSearch" />
+      <button class="search-btn" size="mini" bindtap="onSearch">搜索</button>
+    </view>
+    <view class="urgent-hint">🔥 紧急工单优先展示（红色边框）</view>
+  </view>
+
+  <!-- 工单卡片 -->
+  <view class="card order-card {{item.urgent === 1 ? 'order-urgent' : ''}}"
+        wx:for="{{list}}" wx:key="id">
+    <view class="order-head" data-id="{{item.id}}" bindtap="goDetail">
+      <text class="order-no">{{item.orderNo}}</text>
+      <view class="head-right">
+        <text class="urgent-tag" wx:if="{{item.urgent === 1}}">紧急</text>
+        <text class="tag status-tag" style="background: {{item.statusColor}}1a; color: {{item.statusColor}};">{{item.statusText}}</text>
+      </view>
+    </view>
+    <view data-id="{{item.id}}" bindtap="goDetail">
+      <view class="order-row"><text class="row-label">报修人</text><text class="row-value">{{item.userNickname}}（{{item.userPhone}}）</text></view>
+      <view class="order-row"><text class="row-label">地点</text><text class="row-value">{{item.locationText}}</text></view>
+      <view class="order-row"><text class="row-label">分类</text><text class="row-value">{{item.categoryName}}</text></view>
+      <view class="order-row" wx:if="{{item.descSummary}}"><text class="row-label">描述</text><text class="row-value">{{item.descSummary}}</text></view>
+      <view class="order-foot">{{item.createTime}}</view>
+    </view>
+    <!-- 操作按钮 -->
+    <view class="action-row">
+      <button class="action-btn action-primary" size="mini" wx:if="{{item.status === 'PENDING'}}"
+              data-id="{{item.id}}" catchtap="acceptOrder">接单</button>
+      <button class="action-btn" size="mini" wx:if="{{item.status === 'PENDING' || item.status === 'IN_PROGRESS'}}"
+              data-id="{{item.id}}" data-status="{{item.status}}" catchtap="changeStatus">改状态</button>
+      <button class="action-btn" size="mini" data-id="{{item.id}}" catchtap="goDetail">查看详情</button>
+    </view>
+  </view>
+
+  <view class="empty" wx:if="{{list.length === 0 && !loading}}">暂无工单</view>
+  <view class="loading-text" wx:if="{{loading}}">加载中…</view>
+  <view class="loading-text" wx:elif="{{list.length > 0 && !hasMore}}">没有更多了</view>
+</view>

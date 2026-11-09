@@ -1,0 +1,32 @@
+<!-- 用户管理（ADMIN） -->
+<view class="user-page">
+  <!-- 搜索栏 -->
+  <view class="search-bar">
+    <input class="search-input" placeholder="搜索手机号 / 昵称" confirm-type="search"
+           value="{{keyword}}" bindinput="onKeywordInput" bindconfirm="onSearch" />
+    <button class="search-btn" size="mini" bindtap="onSearch">搜索</button>
+  </view>
+
+  <!-- 用户卡片列表 -->
+  <view class="card user-card" wx:for="{{list}}" wx:key="id">
+    <view class="user-info">
+      <view class="user-line">
+        <text class="user-nickname">{{item.nickname || '未设置昵称'}}</text>
+        <text class="tag role-tag" style="background: {{item.roleColor}}1a; color: {{item.roleColor}};">{{item.roleText}}</text>
+      </view>
+      <view class="user-phone">{{item.phone}}</view>
+      <view class="user-time">注册于 {{item.createTime}}</view>
+    </view>
+    <!-- 管理员账号不允许变更角色，不显示按钮 -->
+    <view class="user-actions" wx:if="{{item.role !== 'ADMIN'}}">
+      <button class="role-btn vip-btn" size="mini" wx:if="{{item.role === 'USER'}}"
+              data-id="{{item.id}}" data-role="VIP" bindtap="setRole">设为会员</button>
+      <button class="role-btn cancel-btn" size="mini" wx:if="{{item.role === 'VIP'}}"
+              data-id="{{item.id}}" data-role="USER" bindtap="setRole">取消会员</button>
+    </view>
+  </view>
+
+  <view class="empty" wx:if="{{list.length === 0 && !loading}}">暂无用户</view>
+  <view class="loading-text" wx:if="{{loading}}">加载中…</view>
+  <view class="loading-text" wx:elif="{{list.length > 0 && !hasMore}}">没有更多了</view>
+</view>

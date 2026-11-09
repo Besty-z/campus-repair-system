@@ -1,0 +1,51 @@
+<!-- 会员报修统计 -->
+<view class="stats-page" wx:if="{{stats}}">
+  <!-- 数字卡片 -->
+  <view class="num-grid">
+    <view class="num-card num-total">
+      <view class="num-value">{{stats.total}}</view>
+      <view class="num-label">全部工单</view>
+    </view>
+    <view class="num-card" style="color:#ff9500;">
+      <view class="num-value">{{stats.pending}}</view>
+      <view class="num-label">待接单</view>
+    </view>
+    <view class="num-card" style="color:#3b7cff;">
+      <view class="num-value">{{stats.inProgress}}</view>
+      <view class="num-label">维修中</view>
+    </view>
+    <view class="num-card" style="color:#07c160;">
+      <view class="num-value">{{stats.finished}}</view>
+      <view class="num-label">已完成</view>
+    </view>
+    <view class="num-card" style="color:#999;">
+      <view class="num-value">{{stats.rejected}}</view>
+      <view class="num-label">驳回</view>
+    </view>
+  </view>
+
+  <!-- 分类分布（进度条列表，零依赖） -->
+  <view class="card">
+    <view class="section-title">分类分布</view>
+    <view class="empty" wx:if="{{byCategory.length === 0}}">暂无数据</view>
+    <view class="bar-row" wx:for="{{byCategory}}" wx:key="categoryName">
+      <text class="bar-name">{{item.categoryName}}</text>
+      <view class="bar-track">
+        <view class="bar-fill" style="width: {{item.percent}}%;"></view>
+      </view>
+      <text class="bar-count">{{item.count}}</text>
+    </view>
+  </view>
+
+  <!-- 按月统计 -->
+  <view class="card">
+    <view class="section-title">按月统计</view>
+    <view class="empty" wx:if="{{byMonth.length === 0}}">暂无数据</view>
+    <view class="month-row" wx:for="{{byMonth}}" wx:key="month">
+      <text class="month-name">{{item.month}}</text>
+      <text class="month-count">{{item.count}} 单</text>
+    </view>
+  </view>
+</view>
+
+<view class="empty" wx:else>加载中…</view>

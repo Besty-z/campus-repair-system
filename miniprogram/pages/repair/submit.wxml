@@ -1,0 +1,90 @@
+<!-- 提交报修页 -->
+<view class="submit-page">
+  <view class="card">
+    <!-- 地点类型 -->
+    <view class="form-item">
+      <text class="form-label">地点类型</text>
+      <view class="radio-group">
+        <view wx:for="{{locationTypes}}" wx:key="index"
+              class="radio-item {{locationTypeIndex === index ? 'radio-active' : ''}}"
+              data-index="{{index}}" bindtap="onLocationTypeChange" data-value="{{index}}">
+          {{item}}
+        </view>
+      </view>
+    </view>
+
+    <!-- 宿舍楼内：楼号 + 房间号 -->
+    <block wx:if="{{locationTypeIndex === 0}}">
+      <view class="form-item">
+        <text class="form-label">楼号</text>
+        <input class="form-input" placeholder="如：5号楼" value="{{buildingNo}}" bindinput="onBuildingInput" />
+      </view>
+      <view class="form-item">
+        <text class="form-label">房间号</text>
+        <input class="form-input" placeholder="如：302" value="{{roomNo}}" bindinput="onRoomInput" />
+      </view>
+    </block>
+
+    <!-- 公共区域：具体位置 -->
+    <view class="form-item" wx:else>
+      <text class="form-label">具体位置</text>
+      <input class="form-input" placeholder="如：图书馆东侧道路" value="{{publicLocation}}" bindinput="onPublicLocationInput" />
+    </view>
+
+    <!-- 故障分类（与地点类型联动） -->
+    <view class="form-item">
+      <text class="form-label">故障分类</text>
+      <picker range="{{categories}}" range-key="name" value="{{categoryIndex}}" bindchange="onCategoryChange">
+        <view class="form-input picker-text {{categoryIndex < 0 ? 'picker-placeholder' : ''}}">
+          {{categoryIndex >= 0 ? categories[categoryIndex].name : '请选择故障分类'}}
+        </view>
+      </picker>
+    </view>
+
+    <!-- 故障描述 -->
+    <view class="form-item">
+      <text class="form-label">故障描述</text>
+      <textarea class="form-input desc-input" placeholder="请描述故障情况" maxlength="500"
+                value="{{description}}" bindinput="onDescInput" />
+    </view>
+
+    <!-- 图片上传：九宫格预览，USER 1 张 / VIP 5 张 -->
+    <view class="form-item">
+      <text class="form-label">故障图片（{{isVip ? '最多5张' : '普通用户限1张'}}）</text>
+      <view class="img-grid">
+        <view class="img-cell" wx:for="{{images}}" wx:key="index">
+          <image src="{{baseUrl + item}}" mode="aspectFill" data-index="{{index}}" bindtap="previewImage" />
+          <view class="img-del" data-index="{{index}}" catchtap="removeImage">×</view>
+        </view>
+        <view class="img-add" bindtap="chooseImage" wx:if="{{images.length < (isVip ? 5 : 1)}}">+</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- VIP 专属：预约上门时间 + 紧急报修 -->
+  <view class="card" wx:if="{{isVip}}">
+    <view class="vip-title">会员专属</view>
+    <view class="form-item">
+      <text class="form-label">预约上门时间（可选）</text>
+      <picker mode="multiSelector" range="{{appointmentRange}}" value="{{appointmentIndex}}"
+              bindchange="onAppointmentChange" bindcolumnchange="onAppointmentColumnChange">
+        <view class="form-input picker-text {{!appointmentText ? 'picker-placeholder' : ''}}">
+          {{appointmentText || '请选择日期和时间段'}}
+        </view>
+      </picker>
+    </view>
+    <view class="form-item switch-row">
+      <text class="form-label switch-label">紧急报修</text>
+      <switch checked="{{urgent}}" bindchange="onUrgentChange" color="#ff3b30" />
+    </view>
+  </view>
+
+  <!-- 普通用户：会员引导文案 -->
+  <view class="card vip-guide" wx:else>
+    <text>升级会员可享：上传最多5张图片、自选预约上门时间、紧急报修优先处理</text>
+  </view>
+
+  <button class="btn-primary submit-btn" bindtap="submit" loading="{{submitting}}" disabled="{{submitting}}">
+    提交报修
+  </button>
+</view>

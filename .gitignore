@@ -1,0 +1,17 @@
+# 依赖与构建产物
+frontend/node_modules/
+frontend/dist/
+backend/target/
+
+# 运行时上传的故障图片
+backend/uploads/
+
+# IDE 与系统文件
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+
+# 日志
+*.log

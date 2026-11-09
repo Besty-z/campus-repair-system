@@ -1,0 +1,47 @@
+<!-- 工单详情 -->
+<view class="detail-page" wx:if="{{order}}">
+  <!-- 状态头部 -->
+  <view class="status-banner" style="background: {{order.statusColor}};">
+    <view class="status-text">{{order.statusText}}</view>
+    <view class="order-no-text">工单号：{{order.orderNo}}</view>
+    <view class="urgent-text" wx:if="{{order.urgent === 1}}">⚠ 紧急工单</view>
+  </view>
+
+  <!-- 基本信息 -->
+  <view class="card">
+    <view class="section-title">报修信息</view>
+    <view class="info-row"><text class="info-label">地点类型</text><text class="info-value">{{order.locationTypeText}}</text></view>
+    <view class="info-row"><text class="info-label">具体地点</text><text class="info-value">{{order.locationText}}</text></view>
+    <view class="info-row"><text class="info-label">故障分类</text><text class="info-value">{{order.categoryName}}</text></view>
+    <view class="info-row"><text class="info-label">故障描述</text><text class="info-value">{{order.description}}</text></view>
+    <view class="info-row" wx:if="{{order.appointmentTime}}">
+      <text class="info-label">预约时间</text><text class="info-value">{{order.appointmentTime}}</text>
+    </view>
+  </view>
+
+  <!-- 故障图片九宫格 -->
+  <view class="card" wx:if="{{imageUrls.length > 0}}">
+    <view class="section-title">故障图片</view>
+    <view class="img-grid">
+      <image wx:for="{{imageUrls}}" wx:key="index" src="{{item}}" mode="aspectFill"
+             class="grid-img" data-index="{{index}}" bindtap="previewImage" />
+    </view>
+  </view>
+
+  <!-- 维修备注 -->
+  <view class="card" wx:if="{{order.adminRemark}}">
+    <view class="section-title">维修备注</view>
+    <view class="remark-text">{{order.adminRemark}}</view>
+  </view>
+
+  <!-- 时间与报修人信息 -->
+  <view class="card">
+    <view class="section-title">进度信息</view>
+    <view class="info-row"><text class="info-label">报修人</text><text class="info-value">{{order.userNickname}}（{{order.userPhone}}）</text></view>
+    <view class="info-row"><text class="info-label">提交时间</text><text class="info-value">{{order.createTime}}</text></view>
+    <view class="info-row" wx:if="{{order.acceptTime}}"><text class="info-label">接单时间</text><text class="info-value">{{order.acceptTime}}</text></view>
+    <view class="info-row" wx:if="{{order.finishTime}}"><text class="info-label">完成时间</text><text class="info-value">{{order.finishTime}}</text></view>
+  </view>
+</view>
+
+<view class="empty" wx:else>加载中…</view>

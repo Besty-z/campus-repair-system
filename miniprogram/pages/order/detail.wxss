@@ -1,0 +1,66 @@
+.status-banner {
+  padding: 50rpx 30rpx;
+  color: #fff;
+}
+
+.status-text {
+  font-size: 40rpx;
+  font-weight: 600;
+}
+
+.order-no-text {
+  font-size: 24rpx;
+  opacity: 0.9;
+  margin-top: 12rpx;
+}
+
+.urgent-text {
+  margin-top: 12rpx;
+  font-size: 24rpx;
+  font-weight: 600;
+}
+
+.section-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 20rpx;
+  border-left: 8rpx solid #3b7cff;
+  padding-left: 16rpx;
+}
+
+.info-row {
+  display: flex;
+  margin-bottom: 14rpx;
+  font-size: 26rpx;
+}
+
+.info-label {
+  color: #999;
+  width: 150rpx;
+  flex-shrink: 0;
+}
+
+.info-value {
+  color: #333;
+  flex: 1;
+  word-break: break-all;
+}
+
+.img-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+}
+
+.grid-img {
+  width: 200rpx;
+  height: 200rpx;
+  border-radius: 12rpx;
+}
+
+.remark-text {
+  color: #555;
+  font-size: 26rpx;
+  line-height: 1.6;
+}

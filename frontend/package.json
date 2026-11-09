@@ -1,0 +1,24 @@
+{
+  "name": "campus-repair-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "校园报修预约系统 - Vue3 网页端（用户端 + 管理后台一体）",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@element-plus/icons-vue": "^2.3.1",
+    "axios": "^1.7.7",
+    "echarts": "^5.5.1",
+    "element-plus": "^2.8.4",
+    "pinia": "^2.2.2",
+    "vue": "^3.5.10",
+    "vue-router": "^4.4.5"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.1.3",
+    "vite": "^5.4.8"
+  }
+}

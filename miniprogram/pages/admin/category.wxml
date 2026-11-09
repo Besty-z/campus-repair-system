@@ -1,0 +1,64 @@
+<!-- 分类管理（ADMIN） -->
+<view class="category-page">
+  <!-- 宿舍楼内分类 -->
+  <view class="card">
+    <view class="section-title">宿舍楼内</view>
+    <view class="cat-row" wx:for="{{dormCategories}}" wx:key="id">
+      <view class="cat-info">
+        <text class="cat-name {{item.status === 0 ? 'cat-disabled' : ''}}">{{item.name}}</text>
+        <text class="cat-sort">排序 {{item.sort}}</text>
+        <text class="cat-off" wx:if="{{item.status === 0}}">已停用</text>
+      </view>
+      <view class="cat-actions">
+        <button class="cat-btn" size="mini" data-item="{{item}}" bindtap="showEdit">编辑</button>
+        <button class="cat-btn cat-btn-danger" size="mini" data-item="{{item}}" bindtap="deleteCategory">删除</button>
+      </view>
+    </view>
+    <view class="empty" wx:if="{{dormCategories.length === 0}}">暂无分类</view>
+  </view>
+
+  <!-- 公共区域分类 -->
+  <view class="card">
+    <view class="section-title">校园公共区域</view>
+    <view class="cat-row" wx:for="{{publicCategories}}" wx:key="id">
+      <view class="cat-info">
+        <text class="cat-name {{item.status === 0 ? 'cat-disabled' : ''}}">{{item.name}}</text>
+        <text class="cat-sort">排序 {{item.sort}}</text>
+        <text class="cat-off" wx:if="{{item.status === 0}}">已停用</text>
+      </view>
+      <view class="cat-actions">
+        <button class="cat-btn" size="mini" data-item="{{item}}" bindtap="showEdit">编辑</button>
+        <button class="cat-btn cat-btn-danger" size="mini" data-item="{{item}}" bindtap="deleteCategory">删除</button>
+      </view>
+    </view>
+    <view class="empty" wx:if="{{publicCategories.length === 0}}">暂无分类</view>
+  </view>
+
+  <!-- 新增按钮 -->
+  <button class="btn-primary add-btn" bindtap="showAdd">+ 新增分类</button>
+
+  <!-- 新增/编辑弹窗 -->
+  <view class="modal-mask" wx:if="{{showModal}}" bindtap="hideModal">
+    <view class="modal-body" catchtap="noop">
+      <view class="modal-title">{{editingId ? '编辑分类' : '新增分类'}}</view>
+      <view class="form-item">
+        <text class="form-label">分类名称</text>
+        <input class="form-input" placeholder="如：网络故障" value="{{formName}}" bindinput="onFormNameInput" />
+      </view>
+      <view class="form-item">
+        <text class="form-label">归属地点类型</text>
+        <picker range="{{locationTypeLabels}}" value="{{formLocationTypeIndex}}" bindchange="onFormLocationTypeChange">
+          <view class="form-input">{{locationTypeLabels[formLocationTypeIndex]}} ▾</view>
+        </picker>
+      </view>
+      <view class="form-item">
+        <text class="form-label">排序号（越小越靠前）</text>
+        <input class="form-input" type="number" placeholder="如：1" value="{{formSort}}" bindinput="onFormSortInput" />
+      </view>
+      <view class="modal-actions">
+        <button class="btn-default modal-btn" bindtap="hideModal">取消</button>
+        <button class="btn-primary modal-btn" bindtap="saveCategory">保存</button>
+      </view>
+    </view>
+  </view>
+</view>

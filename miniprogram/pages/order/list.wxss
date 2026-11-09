@@ -1,0 +1,89 @@
+.list-page {
+  padding-bottom: 30rpx;
+}
+
+.tabs {
+  background: #fff;
+  white-space: nowrap;
+  padding: 16rpx 10rpx;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.tab {
+  display: inline-block;
+  padding: 10rpx 30rpx;
+  margin: 0 8rpx;
+  font-size: 26rpx;
+  color: #666;
+  border-radius: 30rpx;
+}
+
+.tab-active {
+  background: #3b7cff;
+  color: #fff;
+}
+
+.order-card {
+  margin: 20rpx;
+}
+
+.order-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16rpx;
+}
+
+.order-no {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #333;
+}
+
+.head-right {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.urgent-tag {
+  color: #ff3b30;
+  font-size: 22rpx;
+  font-weight: 600;
+  border: 2rpx solid #ff3b30;
+  border-radius: 8rpx;
+  padding: 2rpx 10rpx;
+}
+
+.order-row {
+  display: flex;
+  margin-bottom: 10rpx;
+  font-size: 26rpx;
+}
+
+.row-label {
+  color: #999;
+  width: 90rpx;
+  flex-shrink: 0;
+}
+
+.row-value {
+  color: #333;
+  flex: 1;
+}
+
+.order-foot {
+  color: #bbb;
+  font-size: 22rpx;
+  margin-top: 12rpx;
+  text-align: right;
+}
+
+.loading-text {
+  text-align: center;
+  color: #999;
+  font-size: 24rpx;
+  padding: 24rpx 0;
+}

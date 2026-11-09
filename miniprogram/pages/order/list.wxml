@@ -1,0 +1,38 @@
+<!-- 我的工单列表 -->
+<view class="list-page">
+  <!-- 状态筛选 tabs -->
+  <scroll-view scroll-x class="tabs" enhanced show-scrollbar="{{false}}">
+    <view class="tab {{activeTab === index ? 'tab-active' : ''}}"
+          wx:for="{{tabs}}" wx:key="value"
+          data-index="{{index}}" bindtap="onTabChange">{{item.label}}</view>
+  </scroll-view>
+
+  <!-- 工单卡片列表 -->
+  <view class="card order-card" wx:for="{{list}}" wx:key="id" data-id="{{item.id}}" bindtap="goDetail">
+    <view class="order-head">
+      <text class="order-no">{{item.orderNo}}</text>
+      <view class="head-right">
+        <text class="urgent-tag" wx:if="{{item.urgent === 1}}">紧急</text>
+        <text class="tag status-tag" style="background: {{item.statusColor}}1a; color: {{item.statusColor}};">{{item.statusText}}</text>
+      </view>
+    </view>
+    <view class="order-row">
+      <text class="row-label">地点</text>
+      <text class="row-value">{{item.locationText}}</text>
+    </view>
+    <view class="order-row">
+      <text class="row-label">分类</text>
+      <text class="row-value">{{item.categoryName}}</text>
+    </view>
+    <view class="order-row" wx:if="{{item.descSummary}}">
+      <text class="row-label">描述</text>
+      <text class="row-value">{{item.descSummary}}</text>
+    </view>
+    <view class="order-foot">{{item.createTime}}</view>
+  </view>
+
+  <!-- 空状态 / 加载提示 -->
+  <view class="empty" wx:if="{{list.length === 0 && !loading}}">暂无工单，快去报修吧</view>
+  <view class="loading-text" wx:if="{{loading}}">加载中…</view>
+  <view class="loading-text" wx:elif="{{list.length > 0 && !hasMore}}">没有更多了</view>
+</view>

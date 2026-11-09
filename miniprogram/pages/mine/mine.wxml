@@ -1,0 +1,50 @@
+<!-- 我的 -->
+<view class="mine-page">
+  <!-- 用户信息卡片 -->
+  <view class="user-card" wx:if="{{userInfo}}">
+    <view class="avatar">👤</view>
+    <view class="user-meta">
+      <view class="nickname-row">
+        <text class="nickname">{{userInfo.nickname || '未设置昵称'}}</text>
+        <text class="tag role-tag" style="background: {{roleColor}}1a; color: {{roleColor}};">{{roleText}}</text>
+      </view>
+      <view class="phone">{{userInfo.phone}}</view>
+    </view>
+  </view>
+
+  <!-- 未登录 -->
+  <view class="user-card" wx:else>
+    <view class="avatar">👤</view>
+    <view class="user-meta">
+      <view class="nickname">未登录</view>
+      <button class="btn-primary login-btn" size="mini" bindtap="goLogin">去登录</button>
+    </view>
+  </view>
+
+  <!-- VIP 入口 -->
+  <view class="card menu-card" wx:if="{{isVip}}">
+    <view class="menu-item" bindtap="goStats">
+      <text>📊 报修统计</text>
+      <text class="menu-arrow">›</text>
+    </view>
+  </view>
+
+  <!-- ADMIN 入口 -->
+  <view class="card menu-card" wx:if="{{isAdmin}}">
+    <view class="menu-item" bindtap="goAdminOrder">
+      <text>📋 工单管理</text>
+      <text class="menu-arrow">›</text>
+    </view>
+    <view class="menu-item" bindtap="goAdminCategory">
+      <text>🏷 分类管理</text>
+      <text class="menu-arrow">›</text>
+    </view>
+    <view class="menu-item" bindtap="goAdminUser">
+      <text>👥 用户管理</text>
+      <text class="menu-arrow">›</text>
+    </view>
+  </view>
+
+  <!-- 退出登录 -->
+  <button class="btn-default logout-btn" wx:if="{{userInfo}}" bindtap="logout">退出登录</button>
+</view>

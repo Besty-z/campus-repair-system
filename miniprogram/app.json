@@ -1,0 +1,40 @@
+{
+  "pages": [
+    "pages/repair/submit",
+    "pages/order/list",
+    "pages/mine/mine",
+    "pages/login/login",
+    "pages/order/detail",
+    "pages/stats/stats",
+    "pages/admin/order",
+    "pages/admin/category",
+    "pages/admin/user"
+  ],
+  "window": {
+    "navigationBarBackgroundColor": "#3b7cff",
+    "navigationBarTitleText": "校园报修预约系统",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#f5f6fa"
+  },
+  "tabBar": {
+    "color": "#999999",
+    "selectedColor": "#3b7cff",
+    "backgroundColor": "#ffffff",
+    "list": [
+      {
+        "pagePath": "pages/repair/submit",
+        "text": "我要报修"
+      },
+      {
+        "pagePath": "pages/order/list",
+        "text": "我的工单"
+      },
+      {
+        "pagePath": "pages/mine/mine",
+        "text": "我的"
+      }
+    ]
+  },
+  "sitemapLocation": "sitemap.json",
+  "style": "v2"
+}
