@@ -13,14 +13,13 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
 /**
  * 故障分类接口：
- * - 用户端：查询启用状态的分类列表（按地点类型筛选）；
+ * - 用户端：查询启用状态的分类列表（分类按工种划分，不区分报修地点）；
  * - 管理员：全量列表、新增、编辑、删除（被引用时逻辑删除）。
  *
  * @author campus
@@ -44,13 +43,11 @@ public class CategoryController {
     /**
      * 查询启用状态的分类列表（所有登录用户可用，按排序号升序）。
      *
-     * @param locationType 地点类型（可选，DORM/PUBLIC）
      * @return 启用分类列表
      */
     @GetMapping
-    public Result<List<CategoryVO>> listEnabled(
-            @RequestParam(value = "locationType", required = false) String locationType) {
-        return Result.success(faultCategoryService.listEnabled(locationType));
+    public Result<List<CategoryVO>> listEnabled() {
+        return Result.success(faultCategoryService.listEnabled());
     }
 
     /**

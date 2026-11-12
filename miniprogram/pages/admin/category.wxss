@@ -43,6 +43,14 @@
   color: #a6b1c2;
 }
 
+/* 服务价格：橙色强调 */
+.cat-price {
+  margin-right: 16rpx;
+  font-size: 24rpx;
+  font-weight: 600;
+  color: #ff6b00;
+}
+
 .cat-off {
   margin-left: 14rpx;
   padding: 2rpx 14rpx;

@@ -13,10 +13,15 @@ Page({
     buildingNo: '',            // 宿舍楼号（DORM）
     roomNo: '',                // 房间号（DORM）
     publicLocation: '',        // 公共区域具体位置（PUBLIC）
-    categories: [],            // 当前地点类型下的分类列表（末尾含「其他（自行填写）」）
-    categoryIndex: -1,         // 选中的分类下标
-    isOtherCategory: false,    // 是否选择了「其他（自行填写）」
+    categories: [],            // 故障分类列表（末尾含「其他（自行填写）」），每项含 selected/price
+    otherSelected: false,      // 是否选择了「其他（自行填写）」，与普通分类互斥
     customCategory: '',        // 自定义故障类型（选择「其他」时填写）
+    // 费用预估（由所选分类单价汇总，VIP 自动 8 折）
+    priceItems: [],            // 已选分类价格明细 [{ id, name, priceText }]
+    totalPriceText: '',        // 原价合计
+    discountText: '',          // 会员优惠金额
+    estimateText: '',          // 预估费用（VIP 为折后价）
+    hasEstimate: false,        // 是否已选可计价分类
     description: '',
     images: [],                // 已上传成功的服务端相对路径
     isVip: false,              // 是否会员（控制图片数量、预约时间、紧急开关）
@@ -28,11 +33,27 @@ Page({
     submitting: false
   },
 
+  /**
+   * 支持从首页服务卡片带分类 id 进入（tabBar 页通过缓存传递，也兼容 query 参数）
+   * @param {object} options 页面参数，categoryId 为预选分类 id
+   */
+  onLoad(options) {
+    if (options && options.categoryId) {
+      this.pendingCategoryId = String(options.categoryId);
+    }
+  },
+
   onShow() {
     // tabBar 页面：每次显示时检查登录态
     const app = getApp();
     if (!app.checkLogin()) {
       return;
+    }
+    // 读取首页服务卡片暂存的分类 id（switchTab 无法携带 query 参数）
+    const pendingId = wx.getStorageSync('pendingCategoryId');
+    if (pendingId) {
+      this.pendingCategoryId = String(pendingId);
+      wx.removeStorageSync('pendingCategoryId');
     }
     const userInfo = app.globalData.userInfo || {};
     this.setData({ isVip: userInfo.role === 'VIP', imgBaseUrl: app.globalData.imageBaseUrl });
@@ -40,33 +61,98 @@ Page({
     this.loadCategories();
   },
 
-  /** 加载故障分类（按地点类型联动），末尾追加「其他（自行填写）」 */
+  /**
+   * 加载故障分类（按维修工种划分，不再区分地点类型），末尾追加「其他（自行填写）」；
+   * 分类数据到达后再执行预选与费用计算
+   */
   loadCategories() {
-    const locationType = this.data.locationTypeIndex === 0 ? 'DORM' : 'PUBLIC';
-    get('/api/categories', { locationType }).then((list) => {
-      const categories = (list || []).concat([OTHER_CATEGORY]);
+    get('/api/categories').then((list) => {
+      const categories = (list || []).map((c) => {
+        const price = Number(c.price);
+        const hasPrice = isFinite(price) && price > 0;
+        return {
+          id: c.id,
+          name: c.name,
+          price: hasPrice ? price : null,
+          priceText: hasPrice ? util.formatMoney(price) : '',
+          selected: false
+        };
+      }).concat([Object.assign({}, OTHER_CATEGORY, { price: null, priceText: '', selected: false })]);
       this.setData({
         categories,
-        categoryIndex: -1,
-        isOtherCategory: false,
+        otherSelected: false,
         customCategory: ''
+      }, () => {
+        if (this.pendingCategoryId) {
+          this.applyPendingCategory();
+        } else {
+          this.refreshEstimate();
+        }
       });
     }).catch(() => {});
   },
 
-  /** 切换地点类型：清空对应字段、已选分类与自定义输入，并重新加载分类 */
+  /** 应用首页传来的分类 id（等分类异步加载完成后预选） */
+  applyPendingCategory() {
+    if (!this.pendingCategoryId) {
+      return;
+    }
+    const pendingId = String(this.pendingCategoryId);
+    this.pendingCategoryId = null;
+    const idx = this.data.categories.findIndex((c) => c.id !== null && String(c.id) === pendingId);
+    if (idx < 0) {
+      this.refreshEstimate();
+      return;
+    }
+    const updates = {};
+    this.data.categories.forEach((c, i) => {
+      updates['categories[' + i + '].selected'] = i === idx;
+    });
+    updates.otherSelected = false;
+    updates.customCategory = '';
+    this.setData(updates, () => {
+      this.refreshEstimate();
+    });
+  },
+
+  /**
+   * 计算费用预估：已选分类单价求和；VIP 自动 8 折；「其他」为面议
+   */
+  refreshEstimate() {
+    const d = this.data;
+    if (d.otherSelected) {
+      this.setData({
+        priceItems: [],
+        totalPriceText: '',
+        discountText: '',
+        estimateText: '面议',
+        hasEstimate: false
+      });
+      return;
+    }
+    const selected = d.categories.filter((c) => c.selected && c.id !== null && c.price > 0);
+    const total = selected.reduce((sum, c) => sum + c.price, 0);
+    // 前端展示与后端一致：8 折后保留两位
+    const discount = d.isVip ? Math.round(total * 0.2 * 100) / 100 : 0;
+    const estimate = Math.round((total - discount) * 100) / 100;
+    this.setData({
+      priceItems: selected.map((c) => ({ id: c.id, name: c.name, priceText: util.formatMoney(c.price) })),
+      totalPriceText: util.formatMoney(total),
+      discountText: util.formatMoney(discount),
+      estimateText: util.formatMoney(estimate),
+      hasEstimate: selected.length > 0
+    });
+  },
+
+  /** 切换地点类型：清空对应地点字段即可（分类不再随地点类型变化） */
   onLocationTypeChange(e) {
     const idx = Number(e.currentTarget.dataset.value);
     this.setData({
       locationTypeIndex: idx,
       buildingNo: '',
       roomNo: '',
-      publicLocation: '',
-      categoryIndex: -1,
-      isOtherCategory: false,
-      customCategory: ''
+      publicLocation: ''
     });
-    this.loadCategories();
   },
 
   onBuildingInput(e) {
@@ -81,16 +167,41 @@ Page({
     this.setData({ publicLocation: e.detail.value });
   },
 
-  /** 分类选择：选中最后一项（「其他（自行填写）」）时展示自定义输入框 */
-  onCategoryChange(e) {
-    const idx = Number(e.detail.value);
-    const selected = this.data.categories[idx];
-    const isOtherCategory = !!(selected && selected.id === null);
-    const updates = { categoryIndex: idx, isOtherCategory };
-    if (!isOtherCategory) {
-      updates.customCategory = '';
+  /**
+   * 分类多选：普通分类可同时选中多个；
+   * 「其他（自行填写）」与普通分类互斥，选中它清空普通分类，选中普通分类则取消它。
+   */
+  onCategoryTap(e) {
+    const idx = Number(e.currentTarget.dataset.index);
+    const target = this.data.categories[idx];
+    if (!target) {
+      return;
     }
-    this.setData(updates);
+    const otherIdx = this.data.categories.findIndex((c) => c.id === null);
+    const updates = {};
+    if (target.id === null) {
+      // 点击「其他」：切换自身；选中时清空全部普通分类
+      const selected = !target.selected;
+      this.data.categories.forEach((c, i) => {
+        updates['categories[' + i + '].selected'] = selected ? c.id === null : false;
+      });
+      updates.otherSelected = selected;
+      updates.customCategory = selected ? this.data.customCategory : '';
+      this.setData(updates, () => {
+        this.refreshEstimate();
+      });
+      return;
+    }
+    // 点击普通分类：切换自身，同时取消「其他」
+    updates['categories[' + idx + '].selected'] = !target.selected;
+    if (otherIdx >= 0) {
+      updates['categories[' + otherIdx + '].selected'] = false;
+    }
+    updates.otherSelected = false;
+    updates.customCategory = '';
+    this.setData(updates, () => {
+      this.refreshEstimate();
+    });
   },
 
   onCustomCategoryInput(e) {
@@ -208,11 +319,15 @@ Page({
       wx.showToast({ title: '请填写具体位置', icon: 'none' });
       return;
     }
-    if (d.categoryIndex < 0) {
-      wx.showToast({ title: '请选择故障分类', icon: 'none' });
+    // 分类校验：普通分类可多选；「其他」与普通分类互斥且自定义内容必填
+    const selectedIds = d.categories
+      .filter((c) => c.selected && c.id !== null)
+      .map((c) => c.id);
+    if (!d.otherSelected && selectedIds.length === 0) {
+      wx.showToast({ title: '请选择故障分类（可多选）', icon: 'none' });
       return;
     }
-    if (d.isOtherCategory && !d.customCategory.trim()) {
+    if (d.otherSelected && !d.customCategory.trim()) {
       wx.showToast({ title: '请填写故障类型', icon: 'none' });
       return;
     }
@@ -220,14 +335,14 @@ Page({
       wx.showToast({ title: '请填写故障描述', icon: 'none' });
       return;
     }
-    // 选择「其他（自行填写）」时 categoryId 传 null，改传 customCategory
+    // 多选分类传 categoryIds；选择「其他」时传空数组并改传 customCategory
     const body = {
       locationType: d.locationTypeIndex === 0 ? 'DORM' : 'PUBLIC',
       buildingNo: d.locationTypeIndex === 0 ? d.buildingNo.trim() : null,
       roomNo: d.locationTypeIndex === 0 ? d.roomNo.trim() : null,
       publicLocation: d.locationTypeIndex === 1 ? d.publicLocation.trim() : null,
-      categoryId: d.isOtherCategory ? null : d.categories[d.categoryIndex].id,
-      customCategory: d.isOtherCategory ? d.customCategory.trim() : null,
+      categoryIds: d.otherSelected ? [] : selectedIds,
+      customCategory: d.otherSelected ? d.customCategory.trim() : null,
       description: d.description.trim(),
       images: d.images,
       urgent: d.isVip && d.urgent ? 1 : 0,
@@ -255,14 +370,16 @@ Page({
       buildingNo: '',
       roomNo: '',
       publicLocation: '',
-      categoryIndex: -1,
-      isOtherCategory: false,
+      categories: this.data.categories.map((c) => Object.assign({}, c, { selected: false })),
+      otherSelected: false,
       customCategory: '',
       description: '',
       images: [],
       urgent: false,
       appointmentText: '',
       appointmentIndex: [0, 0]
+    }, () => {
+      this.refreshEstimate();
     });
   }
 });

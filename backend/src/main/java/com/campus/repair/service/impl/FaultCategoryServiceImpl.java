@@ -8,7 +8,9 @@ import com.campus.repair.common.UserContext;
 import com.campus.repair.dto.CategoryDTO;
 import com.campus.repair.entity.FaultCategory;
 import com.campus.repair.entity.RepairOrder;
+import com.campus.repair.entity.RepairOrderCategory;
 import com.campus.repair.mapper.FaultCategoryMapper;
+import com.campus.repair.mapper.RepairOrderCategoryMapper;
 import com.campus.repair.mapper.RepairOrderMapper;
 import com.campus.repair.service.FaultCategoryService;
 import com.campus.repair.vo.CategoryAdminVO;
@@ -16,7 +18,6 @@ import com.campus.repair.vo.CategoryVO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -40,29 +41,33 @@ public class FaultCategoryServiceImpl implements FaultCategoryService {
     /** 报修工单 Mapper（用于判断分类是否被引用） */
     private final RepairOrderMapper repairOrderMapper;
 
+    /** 工单-分类关联 Mapper（多选关联） */
+    private final RepairOrderCategoryMapper repairOrderCategoryMapper;
+
     /**
      * 构造故障分类服务。
      *
-     * @param faultCategoryMapper 故障分类 Mapper
-     * @param repairOrderMapper   报修工单 Mapper
+     * @param faultCategoryMapper         故障分类 Mapper
+     * @param repairOrderMapper           报修工单 Mapper
+     * @param repairOrderCategoryMapper   工单-分类关联 Mapper
      */
     public FaultCategoryServiceImpl(FaultCategoryMapper faultCategoryMapper,
-                                    RepairOrderMapper repairOrderMapper) {
+                                    RepairOrderMapper repairOrderMapper,
+                                    RepairOrderCategoryMapper repairOrderCategoryMapper) {
         this.faultCategoryMapper = faultCategoryMapper;
         this.repairOrderMapper = repairOrderMapper;
+        this.repairOrderCategoryMapper = repairOrderCategoryMapper;
     }
 
     /**
      * 查询启用状态的分类列表（用户端），按排序号升序。
      *
-     * @param locationType 地点类型（可选，DORM/PUBLIC）
      * @return 启用分类列表
      */
     @Override
-    public List<CategoryVO> listEnabled(String locationType) {
+    public List<CategoryVO> listEnabled() {
         List<FaultCategory> list = faultCategoryMapper.selectList(new LambdaQueryWrapper<FaultCategory>()
                 .eq(FaultCategory::getStatus, Constants.STATUS_ENABLED)
-                .eq(StringUtils.hasText(locationType), FaultCategory::getLocationType, locationType)
                 .orderByAsc(FaultCategory::getSort));
         return list.stream().map(CategoryVO::from).collect(Collectors.toList());
     }
@@ -91,7 +96,8 @@ public class FaultCategoryServiceImpl implements FaultCategoryService {
         LocalDateTime now = LocalDateTime.now();
         FaultCategory category = new FaultCategory();
         category.setName(dto.getName());
-        category.setLocationType(dto.getLocationType());
+        category.setPrice(dto.getPrice());
+        category.setImageUrl(dto.getImageUrl());
         category.setSort(dto.getSort());
         category.setStatus(Constants.STATUS_ENABLED);
         category.setCreateTime(now);
@@ -119,7 +125,8 @@ public class FaultCategoryServiceImpl implements FaultCategoryService {
             throw new BizException(ResultCode.BAD_REQUEST, "状态只能为0或1");
         }
         category.setName(dto.getName());
-        category.setLocationType(dto.getLocationType());
+        category.setPrice(dto.getPrice());
+        category.setImageUrl(dto.getImageUrl());
         category.setSort(dto.getSort());
         if (status != null) {
             category.setStatus(status);
@@ -144,8 +151,14 @@ public class FaultCategoryServiceImpl implements FaultCategoryService {
         if (category == null) {
             throw new BizException(ResultCode.BAD_REQUEST, "分类不存在");
         }
-        Long referenceCount = repairOrderMapper.selectCount(new LambdaQueryWrapper<RepairOrder>()
-                .eq(RepairOrder::getCategoryId, id));
+        // 先查多选关联表，再兼容历史单分类字段
+        Long referenceCount = repairOrderCategoryMapper.selectCount(
+                new LambdaQueryWrapper<RepairOrderCategory>()
+                        .eq(RepairOrderCategory::getCategoryId, id));
+        if (referenceCount == null || referenceCount == 0) {
+            referenceCount = repairOrderMapper.selectCount(new LambdaQueryWrapper<RepairOrder>()
+                    .eq(RepairOrder::getCategoryId, id));
+        }
         if (referenceCount != null && referenceCount > 0) {
             // 历史工单需要保留分类名称，只能停用不能物理删除
             FaultCategory update = new FaultCategory();

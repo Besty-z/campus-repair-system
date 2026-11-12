@@ -13,7 +13,11 @@
     <view class="order-head">
       <view class="order-mark"></view>
       <view class="order-title-wrap">
-        <view class="order-title">{{item.categoryName || '其他故障'}}</view>
+        <!-- 多选分类优先用小标签展示，无分类名列表时回退到 categoryName -->
+        <view class="order-title cat-title" wx:if="{{item.categoryNames && item.categoryNames.length > 0}}">
+          <text class="tag cat-chip" wx:for="{{item.categoryNames}}" wx:for-item="catName" wx:key="*this">{{catName}}</text>
+        </view>
+        <view class="order-title" wx:else>{{item.categoryName || '其他故障'}}</view>
         <view class="order-no">工单号 {{item.orderNo}}</view>
       </view>
       <view class="head-right">
@@ -26,6 +30,10 @@
       <view class="order-row">
         <text class="row-label">报修地点</text>
         <text class="row-value">{{item.locationText}}</text>
+      </view>
+      <view class="order-row">
+        <text class="row-label">预估费用</text>
+        <text class="row-value order-price">{{item.estimatedText}}</text>
       </view>
       <view class="order-row" wx:if="{{item.descSummary}}">
         <text class="row-label">故障描述</text>

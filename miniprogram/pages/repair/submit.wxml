@@ -50,16 +50,18 @@
     </view>
 
     <view class="form-item">
-      <text class="form-label"><text class="required">*</text>故障分类</text>
-      <picker range="{{categories}}" range-key="name" value="{{categoryIndex}}" bindchange="onCategoryChange">
-        <view class="picker-row {{categoryIndex < 0 ? 'picker-placeholder' : ''}}">
-          <text>{{categoryIndex >= 0 ? categories[categoryIndex].name : '请选择故障分类'}}</text>
-          <text class="picker-arrow">›</text>
+      <text class="form-label"><text class="required">*</text>故障分类（可多选）</text>
+      <view class="cat-tags">
+        <view wx:for="{{categories}}" wx:key="name"
+              class="cat-tag {{item.selected ? 'cat-tag-active' : ''}}"
+              data-index="{{index}}" bindtap="onCategoryTap">
+          <text>{{item.name}}</text>
+          <text class="cat-price" wx:if="{{item.priceText}}">¥{{item.priceText}}</text>
         </view>
-      </picker>
+      </view>
     </view>
 
-    <view class="form-item" wx:if="{{isOtherCategory}}">
+    <view class="form-item" wx:if="{{otherSelected}}">
       <text class="form-label"><text class="required">*</text>故障类型</text>
       <input class="form-input" placeholder="请填写故障类型（不超过50字）" maxlength="50"
              value="{{customCategory}}" bindinput="onCustomCategoryInput" />
@@ -69,6 +71,52 @@
       <text class="form-label"><text class="required">*</text>故障描述</text>
       <textarea class="form-input desc-input" placeholder="请描述故障情况，便于维修人员提前准备" maxlength="500"
                 value="{{description}}" bindinput="onDescInput" />
+    </view>
+  </view>
+
+  <!-- 费用预估：已选分类单价 + 合计 + 会员 8 折 -->
+  <view class="card estimate-card">
+    <view class="section-head">
+      <text class="section-title">费用预估</text>
+      <text class="section-tip">{{isVip ? '会员 8 折' : '会员享 8 折'}}</text>
+    </view>
+
+    <!-- 选择「其他」：费用面议 -->
+    <block wx:if="{{otherSelected}}">
+      <view class="estimate-final">
+        <text class="final-label">预估费用</text>
+        <text class="final-price">面议</text>
+      </view>
+      <view class="estimate-tip">自行填写故障类型，费用由维修师傅现场评估</view>
+    </block>
+
+    <!-- 已选普通分类：单价明细 + 合计 -->
+    <block wx:elif="{{hasEstimate}}">
+      <view class="estimate-row" wx:for="{{priceItems}}" wx:key="id">
+        <text class="estimate-name">{{item.name}}</text>
+        <text class="estimate-price">¥{{item.priceText}}</text>
+      </view>
+      <view class="estimate-row estimate-total">
+        <text class="estimate-name">合计</text>
+        <text class="estimate-price">¥{{totalPriceText}}</text>
+      </view>
+      <view class="estimate-row estimate-discount" wx:if="{{isVip}}">
+        <text class="estimate-name">会员 8 折优惠</text>
+        <text class="estimate-price">-¥{{discountText}}</text>
+      </view>
+      <view class="estimate-final">
+        <text class="final-label">预估费用</text>
+        <text class="final-price">¥{{estimateText}}</text>
+      </view>
+      <view class="estimate-tip" wx:if="{{isVip}}">实际费用以维修师傅现场确认为准</view>
+    </block>
+
+    <!-- 未选择分类 -->
+    <view class="estimate-empty" wx:else>选择故障分类后自动计算费用</view>
+
+    <!-- 普通用户：引导开通会员 -->
+    <view class="estimate-tip estimate-tip-member" wx:if="{{!isVip && !otherSelected}}">
+      开通会员，全部服务享 8 折优惠
     </view>
   </view>
 

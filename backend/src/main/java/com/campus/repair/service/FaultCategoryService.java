@@ -16,10 +16,9 @@ public interface FaultCategoryService {
     /**
      * 查询启用状态的分类列表（用户端），按排序号升序。
      *
-     * @param locationType 地点类型（可选，DORM/PUBLIC）
      * @return 启用分类列表
      */
-    List<CategoryVO> listEnabled(String locationType);
+    List<CategoryVO> listEnabled();
 
     /**
      * 查询全量分类列表含停用（仅管理员），按排序号升序。

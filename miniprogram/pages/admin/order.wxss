@@ -213,3 +213,90 @@
   font-weight: 600;
   box-shadow: 0 8rpx 18rpx rgba(44, 107, 242, 0.22);
 }
+
+/* 指派维修工弹窗 */
+.modal-mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 23, 40, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.modal-body {
+  width: 620rpx;
+  background: #ffffff;
+  border-radius: 32rpx;
+  padding: 42rpx 34rpx 34rpx;
+  box-shadow: 0 24rpx 60rpx rgba(18, 41, 74, 0.24);
+  box-sizing: border-box;
+}
+
+.modal-title {
+  margin-bottom: 28rpx;
+  font-size: 32rpx;
+  font-weight: 700;
+  text-align: center;
+  color: var(--ink);
+}
+
+.worker-picker {
+  max-height: 560rpx;
+}
+
+.worker-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 22rpx 24rpx;
+  margin-bottom: 14rpx;
+  border-radius: 18rpx;
+  background: #f6f8fd;
+  border: 2rpx solid transparent;
+}
+
+.worker-option-active {
+  background: var(--brand-soft);
+  border-color: rgba(44, 107, 242, 0.4);
+}
+
+.worker-option-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.worker-option-name {
+  font-size: 27rpx;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.worker-option-phone {
+  display: block;
+  margin-top: 6rpx;
+  font-size: 22rpx;
+  color: var(--muted);
+}
+
+.worker-option-tag {
+  flex-shrink: 0;
+  margin-left: 16rpx;
+  padding: 4rpx 16rpx;
+  border-radius: 999rpx;
+  font-size: 20rpx;
+  color: var(--brand);
+  background: rgba(44, 107, 242, 0.12);
+}
+
+.modal-actions {
+  display: flex;
+  gap: 20rpx;
+  margin-top: 26rpx;
+}
+
+.modal-btn {
+  flex: 1;
+  margin: 0;
+}

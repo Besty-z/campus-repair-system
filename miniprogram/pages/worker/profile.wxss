@@ -1,0 +1,187 @@
+/* 维修工「我的资料」样式 */
+
+.profile-page {
+  padding-bottom: 40rpx;
+}
+
+/* 身份头部 */
+.worker-hero {
+  position: relative;
+  margin: 24rpx 24rpx 4rpx;
+  padding: 42rpx 32rpx;
+  border-radius: 32rpx;
+  background: linear-gradient(135deg, #1b47b8 0%, #2c6bf2 52%, #17bfd4 100%);
+  overflow: hidden;
+  box-shadow: 0 18rpx 40rpx rgba(44, 107, 242, 0.26);
+}
+
+.hero-deco {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.hero-deco-a {
+  width: 260rpx;
+  height: 260rpx;
+  right: -80rpx;
+  top: -100rpx;
+}
+
+.hero-deco-b {
+  width: 150rpx;
+  height: 150rpx;
+  left: 120rpx;
+  bottom: -90rpx;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.hero-top {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+}
+
+.hero-avatar {
+  width: 108rpx;
+  height: 108rpx;
+  line-height: 108rpx;
+  flex-shrink: 0;
+  margin-right: 24rpx;
+  border-radius: 32rpx;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.24);
+  border: 2rpx solid rgba(255, 255, 255, 0.5);
+  color: #ffffff;
+  font-size: 44rpx;
+  font-weight: 700;
+}
+
+.hero-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.hero-name-row {
+  display: flex;
+  align-items: center;
+}
+
+.hero-name {
+  font-size: 36rpx;
+  font-weight: 700;
+  color: #ffffff;
+  margin-right: 14rpx;
+}
+
+.hero-status {
+  padding: 3rpx 16rpx;
+  border-radius: 999rpx;
+  font-size: 20rpx;
+  font-weight: 600;
+  color: #1b47b8;
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.hero-phone {
+  margin-top: 10rpx;
+  font-size: 24rpx;
+  color: rgba(255, 255, 255, 0.86);
+}
+
+.hero-tags {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  margin-top: 22rpx;
+}
+
+.hero-tag {
+  margin-right: 12rpx;
+  margin-bottom: 8rpx;
+  padding: 5rpx 18rpx;
+  border-radius: 999rpx;
+  font-size: 21rpx;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1rpx solid rgba(255, 255, 255, 0.4);
+}
+
+/* 数据统计 */
+.stat-card {
+  display: flex;
+  align-items: center;
+  padding: 34rpx 20rpx;
+}
+
+.stat-item {
+  flex: 1;
+  text-align: center;
+}
+
+.stat-num {
+  font-size: 40rpx;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.stat-label {
+  margin-top: 8rpx;
+  font-size: 22rpx;
+  color: var(--muted);
+}
+
+.stat-divider {
+  width: 2rpx;
+  height: 56rpx;
+  background: var(--line);
+}
+
+/* 表单 */
+.form-textarea {
+  width: 100%;
+  height: 180rpx;
+  background: #f6f8fd;
+  border: 2rpx solid #edf1f9;
+  border-radius: 18rpx;
+  padding: 20rpx 22rpx;
+  font-size: 27rpx;
+  color: var(--text);
+  box-sizing: border-box;
+}
+
+.cat-select {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.cat-option {
+  margin-right: 14rpx;
+  margin-bottom: 14rpx;
+  padding: 12rpx 28rpx;
+  border-radius: 999rpx;
+  font-size: 24rpx;
+  color: #5b6b7c;
+  background: #f2f5fa;
+  border: 2rpx solid transparent;
+}
+
+.cat-option-active {
+  color: var(--brand);
+  background: var(--brand-soft);
+  border-color: rgba(44, 107, 242, 0.3);
+  font-weight: 600;
+}
+
+.empty-small {
+  padding: 20rpx 0;
+  text-align: center;
+  font-size: 24rpx;
+  color: var(--muted);
+}
+
+.save-btn {
+  margin: 34rpx 24rpx;
+}

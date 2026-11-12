@@ -236,6 +236,10 @@ onMounted(loadData)
   background: linear-gradient(135deg, #f7b955, #f5a524);
 }
 
+.av-worker {
+  background: linear-gradient(135deg, #3fd0a2, #0fb583);
+}
+
 .av-admin {
   background: linear-gradient(135deg, #f77b7b, #ef4b4b);
 }
@@ -272,6 +276,11 @@ onMounted(loadData)
 .role-vip {
   color: #a76a05;
   background: #fff5e3;
+}
+
+.role-worker {
+  color: #0a7f5e;
+  background: #e7f8f2;
 }
 
 .role-admin {

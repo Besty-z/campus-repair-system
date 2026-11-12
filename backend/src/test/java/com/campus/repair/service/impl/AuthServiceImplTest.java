@@ -7,8 +7,10 @@ import com.campus.repair.common.ResultCode;
 import com.campus.repair.dto.LoginDTO;
 import com.campus.repair.dto.RegisterDTO;
 import com.campus.repair.dto.SendCodeDTO;
+import com.campus.repair.entity.RepairWorker;
 import com.campus.repair.entity.SmsCode;
 import com.campus.repair.entity.SysUser;
+import com.campus.repair.mapper.RepairWorkerMapper;
 import com.campus.repair.mapper.SmsCodeMapper;
 import com.campus.repair.mapper.SysUserMapper;
 import com.campus.repair.utils.JwtUtils;
@@ -47,8 +49,34 @@ class AuthServiceImplTest {
     @Mock
     private JwtUtils jwtUtils;
 
+    @Mock
+    private RepairWorkerMapper repairWorkerMapper;
+
     @InjectMocks
     private AuthServiceImpl authService;
+
+    /**
+     * 身份切换：更新账号角色、签发新令牌，并在切到维修工时自动补建档案。
+     */
+    @Test
+    void switchRole_updatesRoleAndCreatesWorkerProfile() {
+        SysUser user = new SysUser();
+        user.setId(1L);
+        user.setPhone("13900000001");
+        user.setNickname("张三");
+        user.setRole(Constants.ROLE_USER);
+        user.setStatus(Constants.STATUS_ENABLED);
+        when(sysUserMapper.selectById(1L)).thenReturn(user);
+        when(repairWorkerMapper.selectCount(any(LambdaQueryWrapper.class))).thenReturn(0L);
+        when(jwtUtils.generateToken(1L, Constants.ROLE_WORKER)).thenReturn("new-token");
+
+        LoginVO vo = authService.switchRole(1L, Constants.ROLE_WORKER);
+
+        assertEquals("new-token", vo.getToken());
+        assertEquals(Constants.ROLE_WORKER, user.getRole());
+        assertEquals(Constants.ROLE_WORKER, vo.getUser().getRole());
+        verify(repairWorkerMapper).insert(any(RepairWorker.class));
+    }
 
     /**
      * 发送验证码应生成 6 位码并入库，返回有效期 300 秒。

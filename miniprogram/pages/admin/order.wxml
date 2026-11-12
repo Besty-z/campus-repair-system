@@ -42,6 +42,7 @@
       <view class="order-row"><text class="row-label">报修人</text><text class="row-value">{{item.userNickname}}（{{item.userPhone}}）</text></view>
       <view class="order-row"><text class="row-label">地点</text><text class="row-value">{{item.locationText}}</text></view>
       <view class="order-row"><text class="row-label">分类</text><text class="row-value">{{item.categoryName}}</text></view>
+      <view class="order-row"><text class="row-label">维修工</text><text class="row-value">{{item.workerName || '未指派'}}</text></view>
       <view class="order-row" wx:if="{{item.descSummary}}"><text class="row-label">描述</text><text class="row-value">{{item.descSummary}}</text></view>
       <view class="order-foot">{{item.createTime}}</view>
     </view>
@@ -49,6 +50,8 @@
     <view class="action-row">
       <button class="action-btn action-primary" size="mini" wx:if="{{item.status === 'PENDING'}}"
               data-id="{{item.id}}" catchtap="acceptOrder">接单</button>
+      <button class="action-btn" size="mini" wx:if="{{item.status === 'PENDING'}}"
+              data-id="{{item.id}}" catchtap="openAssign">指派</button>
       <button class="action-btn" size="mini" wx:if="{{item.status === 'PENDING' || item.status === 'IN_PROGRESS'}}"
               data-id="{{item.id}}" data-status="{{item.status}}" catchtap="changeStatus">改状态</button>
       <button class="action-btn" size="mini" data-id="{{item.id}}" catchtap="goDetail">查看详情</button>
@@ -58,4 +61,27 @@
   <view class="empty" wx:if="{{list.length === 0 && !loading}}">暂无工单</view>
   <view class="loading-text" wx:if="{{loading}}">加载中…</view>
   <view class="loading-text" wx:elif="{{list.length > 0 && !hasMore}}">没有更多了</view>
+</view>
+
+<!-- 指派维修工弹窗 -->
+<view class="modal-mask" wx:if="{{showAssignModal}}" bindtap="hideAssign">
+  <view class="modal-body" catchtap="noop">
+    <view class="modal-title">选择维修工</view>
+    <scroll-view scroll-y class="worker-picker">
+      <view class="worker-option {{assignWorkerId === item.id ? 'worker-option-active' : ''}}"
+            wx:for="{{assignWorkers}}" wx:key="id"
+            data-id="{{item.id}}" bindtap="selectWorker">
+        <view class="worker-option-main">
+          <text class="worker-option-name">{{item.name}}</text>
+          <text class="worker-option-phone">{{item.phone}}</text>
+        </view>
+        <text class="worker-option-tag" wx:if="{{item.categoryNames && item.categoryNames.length > 0}}">{{item.categoryNames[0]}}</text>
+      </view>
+      <view class="empty" wx:if="{{assignWorkers.length === 0}}">暂无在职维修工</view>
+    </scroll-view>
+    <view class="modal-actions">
+      <button class="btn-default modal-btn" bindtap="hideAssign">取消</button>
+      <button class="btn-primary modal-btn" bindtap="confirmAssign">确认指派</button>
+    </view>
+  </view>
 </view>

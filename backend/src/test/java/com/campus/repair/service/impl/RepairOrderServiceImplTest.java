@@ -11,10 +11,13 @@ import com.campus.repair.dto.OrderStatusDTO;
 import com.campus.repair.entity.FaultCategory;
 import com.campus.repair.entity.RepairOrder;
 import com.campus.repair.entity.RepairOrderImage;
+import com.campus.repair.entity.RepairWorker;
 import com.campus.repair.entity.SysUser;
 import com.campus.repair.mapper.FaultCategoryMapper;
+import com.campus.repair.mapper.RepairOrderCategoryMapper;
 import com.campus.repair.mapper.RepairOrderImageMapper;
 import com.campus.repair.mapper.RepairOrderMapper;
+import com.campus.repair.mapper.RepairWorkerMapper;
 import com.campus.repair.mapper.SysUserMapper;
 import com.campus.repair.vo.OrderVO;
 import org.junit.jupiter.api.AfterEach;
@@ -26,6 +29,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collections;
@@ -36,7 +40,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.lenient;
@@ -64,7 +67,13 @@ class RepairOrderServiceImplTest {
     private FaultCategoryMapper faultCategoryMapper;
 
     @Mock
+    private RepairOrderCategoryMapper repairOrderCategoryMapper;
+
+    @Mock
     private SysUserMapper sysUserMapper;
+
+    @Mock
+    private RepairWorkerMapper repairWorkerMapper;
 
     @InjectMocks
     private RepairOrderServiceImpl repairOrderService;
@@ -94,9 +103,24 @@ class RepairOrderServiceImplTest {
     private FaultCategory enabledCategory(Long id) {
         FaultCategory c = new FaultCategory();
         c.setId(id);
-        c.setName("水电故障");
-        c.setLocationType(Constants.LOCATION_DORM);
+        c.setName("水电类");
+        c.setSort(1);
         c.setStatus(Constants.STATUS_ENABLED);
+        return c;
+    }
+
+    /**
+     * 构造带基础服务价的启用分类实体。
+     *
+     * @param id    分类ID
+     * @param name  分类名称
+     * @param price 基础服务价（元）
+     * @return 分类实体
+     */
+    private FaultCategory pricedCategory(Long id, String name, String price) {
+        FaultCategory c = enabledCategory(id);
+        c.setName(name);
+        c.setPrice(new BigDecimal(price));
         return c;
     }
 
@@ -140,7 +164,7 @@ class RepairOrderServiceImplTest {
         dto.setLocationType(Constants.LOCATION_DORM);
         dto.setBuildingNo("5号楼");
         dto.setRoomNo("302");
-        dto.setCategoryId(1L);
+        dto.setCategoryIds(Collections.singletonList(1L));
         dto.setDescription("水龙头漏水");
         return dto;
     }
@@ -152,7 +176,8 @@ class RepairOrderServiceImplTest {
     void create_normalUserWithTwoImages_throws() {
         UserContext.set(1L, Constants.ROLE_USER);
         when(sysUserMapper.selectById(1L)).thenReturn(normalUser(1L));
-        lenient().when(faultCategoryMapper.selectById(1L)).thenReturn(enabledCategory(1L));
+        lenient().when(faultCategoryMapper.selectBatchIds(any()))
+                .thenReturn(Collections.singletonList(enabledCategory(1L)));
         lenient().when(repairOrderMapper.selectCount(any(LambdaQueryWrapper.class))).thenReturn(0L);
 
         OrderCreateDTO dto = baseCreateDTO();
@@ -171,7 +196,8 @@ class RepairOrderServiceImplTest {
     void create_normalUser_urgentAndAppointmentForceReset() {
         UserContext.set(1L, Constants.ROLE_USER);
         when(sysUserMapper.selectById(1L)).thenReturn(normalUser(1L));
-        when(faultCategoryMapper.selectById(1L)).thenReturn(enabledCategory(1L));
+        when(faultCategoryMapper.selectBatchIds(any()))
+                .thenReturn(Collections.singletonList(enabledCategory(1L)));
         when(repairOrderMapper.selectCount(any(LambdaQueryWrapper.class))).thenReturn(0L);
 
         OrderCreateDTO dto = baseCreateDTO();
@@ -202,7 +228,7 @@ class RepairOrderServiceImplTest {
         when(repairOrderMapper.selectCount(any(LambdaQueryWrapper.class))).thenReturn(0L);
 
         OrderCreateDTO dto = baseCreateDTO();
-        dto.setCategoryId(null);
+        dto.setCategoryIds(null);
         dto.setCustomCategory("水管爆裂");
 
         OrderVO vo = repairOrderService.create(1L, dto);
@@ -214,7 +240,60 @@ class RepairOrderServiceImplTest {
         assertNull(saved.getCategoryId());
         assertEquals("水管爆裂", saved.getCustomCategory());
         assertEquals("水管爆裂", vo.getCategoryName());
-        verify(faultCategoryMapper, never()).selectById(anyLong());
+        // 选择“其他（自行填写）”时无基础价，预估费用为面议（null）
+        assertNull(saved.getEstimatedPrice());
+        assertNull(vo.getEstimatedPrice());
+        verify(faultCategoryMapper, never()).selectBatchIds(any());
+    }
+
+    /**
+     * 普通用户预估费用：所选分类基础价按原价求和，保留 2 位小数。
+     */
+    @Test
+    void create_normalUser_calculatesOriginalEstimatedPrice() {
+        UserContext.set(1L, Constants.ROLE_USER);
+        when(sysUserMapper.selectById(1L)).thenReturn(normalUser(1L));
+        when(faultCategoryMapper.selectBatchIds(any()))
+                .thenReturn(Arrays.asList(
+                        pricedCategory(1L, "水电类", "80.00"),
+                        pricedCategory(2L, "木五金类", "70.00")));
+        when(repairOrderMapper.selectCount(any(LambdaQueryWrapper.class))).thenReturn(0L);
+
+        OrderCreateDTO dto = baseCreateDTO();
+        dto.setCategoryIds(Arrays.asList(1L, 2L));
+
+        OrderVO vo = repairOrderService.create(1L, dto);
+
+        ArgumentCaptor<RepairOrder> captor = ArgumentCaptor.forClass(RepairOrder.class);
+        verify(repairOrderMapper).insert(captor.capture());
+        // 普通用户不享受折扣：80 + 70 = 150.00
+        assertEquals(new BigDecimal("150.00"), captor.getValue().getEstimatedPrice());
+        assertEquals(new BigDecimal("150.00"), vo.getEstimatedPrice());
+    }
+
+    /**
+     * 会员用户预估费用：所选分类基础价求和后统一按 8 折，保留 2 位小数。
+     */
+    @Test
+    void create_vipUser_calculatesDiscountedEstimatedPrice() {
+        UserContext.set(2L, Constants.ROLE_VIP);
+        when(sysUserMapper.selectById(2L)).thenReturn(vipUser(2L));
+        when(faultCategoryMapper.selectBatchIds(any()))
+                .thenReturn(Arrays.asList(
+                        pricedCategory(1L, "水电类", "80.00"),
+                        pricedCategory(2L, "木五金类", "70.00")));
+        when(repairOrderMapper.selectCount(any(LambdaQueryWrapper.class))).thenReturn(0L);
+
+        OrderCreateDTO dto = baseCreateDTO();
+        dto.setCategoryIds(Arrays.asList(1L, 2L));
+
+        OrderVO vo = repairOrderService.create(2L, dto);
+
+        ArgumentCaptor<RepairOrder> captor = ArgumentCaptor.forClass(RepairOrder.class);
+        verify(repairOrderMapper).insert(captor.capture());
+        // 会员 8 折：(80 + 70) × 0.8 = 120.00
+        assertEquals(new BigDecimal("120.00"), captor.getValue().getEstimatedPrice());
+        assertEquals(new BigDecimal("120.00"), vo.getEstimatedPrice());
     }
 
     /**
@@ -226,7 +305,7 @@ class RepairOrderServiceImplTest {
         when(sysUserMapper.selectById(1L)).thenReturn(normalUser(1L));
 
         OrderCreateDTO dto = baseCreateDTO();
-        dto.setCategoryId(null);
+        dto.setCategoryIds(null);
         dto.setCustomCategory("   ");
 
         BizException ex = assertThrows(BizException.class,
@@ -342,7 +421,7 @@ class RepairOrderServiceImplTest {
     void adminPage_nonAdmin_throws() {
         UserContext.set(1L, Constants.ROLE_USER);
         BizException ex = assertThrows(BizException.class,
-                () -> repairOrderService.adminPage(null, null, null, null, 1, 10));
+                () -> repairOrderService.adminPage(null, null, null, null, null, 1, 10));
         assertEquals(ResultCode.FORBIDDEN, ex.getCode());
     }
 
@@ -360,5 +439,112 @@ class RepairOrderServiceImplTest {
         BizException ex = assertThrows(BizException.class,
                 () -> repairOrderService.detail(100L));
         assertEquals(ResultCode.FORBIDDEN, ex.getCode());
+    }
+
+    /**
+     * 管理员派单成功：写入维修工，工单状态保持待接单不变。
+     */
+    @Test
+    void assign_success() {
+        UserContext.set(99L, Constants.ROLE_ADMIN);
+        RepairOrder order = new RepairOrder();
+        order.setId(1L);
+        order.setStatus(Constants.ORDER_PENDING);
+        when(repairOrderMapper.selectById(1L)).thenReturn(order);
+        RepairWorker worker = new RepairWorker();
+        worker.setId(3L);
+        worker.setUserId(8L);
+        worker.setStatus(Constants.STATUS_ENABLED);
+        when(repairWorkerMapper.selectOne(any())).thenReturn(worker);
+
+        repairOrderService.assign(1L, 8L);
+
+        ArgumentCaptor<RepairOrder> captor = ArgumentCaptor.forClass(RepairOrder.class);
+        verify(repairOrderMapper).updateById(captor.capture());
+        RepairOrder update = captor.getValue();
+        assertEquals(8L, update.getWorkerId());
+        // 派单不改变工单状态，也不写接单时间
+        assertNull(update.getStatus());
+        assertNull(update.getAcceptTime());
+    }
+
+    /**
+     * 维修工抢已被他人接单的工单，应提示已被其他维修工接单。
+     */
+    @Test
+    void workerAccept_acceptedByOtherWorker_throws() {
+        UserContext.set(3L, Constants.ROLE_WORKER);
+        RepairOrder order = new RepairOrder();
+        order.setId(1L);
+        order.setStatus(Constants.ORDER_IN_PROGRESS);
+        order.setWorkerId(2L); // 已被维修工2接单
+        when(repairOrderMapper.selectById(1L)).thenReturn(order);
+
+        BizException ex = assertThrows(BizException.class,
+                () -> repairOrderService.workerAccept(1L, 3L));
+        assertEquals("工单已被其他维修工接单", ex.getMessage());
+        verify(repairOrderMapper, never()).updateById(any(RepairOrder.class));
+    }
+
+    /**
+     * 维修工抢单成功：写入本人、状态改为维修中并记录接单时间。
+     */
+    @Test
+    void workerAccept_success() {
+        UserContext.set(3L, Constants.ROLE_WORKER);
+        RepairOrder order = new RepairOrder();
+        order.setId(1L);
+        order.setStatus(Constants.ORDER_PENDING);
+        when(repairOrderMapper.selectById(1L)).thenReturn(order);
+
+        repairOrderService.workerAccept(1L, 3L);
+
+        ArgumentCaptor<RepairOrder> captor = ArgumentCaptor.forClass(RepairOrder.class);
+        verify(repairOrderMapper).updateById(captor.capture());
+        RepairOrder update = captor.getValue();
+        assertEquals(3L, update.getWorkerId());
+        assertEquals(Constants.ORDER_IN_PROGRESS, update.getStatus());
+        assertNotNull(update.getAcceptTime());
+    }
+
+    /**
+     * 报修人评价已完成工单成功：写入评分、评价内容与评价时间。
+     */
+    @Test
+    void rate_success() {
+        UserContext.set(1L, Constants.ROLE_USER);
+        RepairOrder order = new RepairOrder();
+        order.setId(1L);
+        order.setUserId(1L);
+        order.setStatus(Constants.ORDER_FINISHED);
+        when(repairOrderMapper.selectById(1L)).thenReturn(order);
+
+        repairOrderService.rate(1L, 1L, 5, "修得很及时");
+
+        ArgumentCaptor<RepairOrder> captor = ArgumentCaptor.forClass(RepairOrder.class);
+        verify(repairOrderMapper).updateById(captor.capture());
+        RepairOrder update = captor.getValue();
+        assertEquals(5, update.getRatingScore());
+        assertEquals("修得很及时", update.getRatingComment());
+        assertNotNull(update.getRatingTime());
+    }
+
+    /**
+     * 同一工单重复评价应被拒绝。
+     */
+    @Test
+    void rate_alreadyRated_throws() {
+        UserContext.set(1L, Constants.ROLE_USER);
+        RepairOrder order = new RepairOrder();
+        order.setId(1L);
+        order.setUserId(1L);
+        order.setStatus(Constants.ORDER_FINISHED);
+        order.setRatingScore(4);
+        when(repairOrderMapper.selectById(1L)).thenReturn(order);
+
+        BizException ex = assertThrows(BizException.class,
+                () -> repairOrderService.rate(1L, 1L, 5, "再次评价"));
+        assertEquals("该工单已评价", ex.getMessage());
+        verify(repairOrderMapper, never()).updateById(any(RepairOrder.class));
     }
 }

@@ -1,0 +1,95 @@
+<!-- 维修工管理（ADMIN） -->
+<view class="worker-page">
+  <!-- 搜索栏 -->
+  <view class="search-bar">
+    <input class="search-input" placeholder="搜索手机号 / 姓名" confirm-type="search"
+           value="{{keyword}}" bindinput="onKeywordInput" bindconfirm="onSearch" />
+    <button class="search-btn" size="mini" bindtap="onSearch">搜索</button>
+  </view>
+
+  <!-- 维修工卡片列表 -->
+  <view class="card worker-card" wx:for="{{list}}" wx:key="id">
+    <view class="worker-head">
+      <view class="worker-avatar">{{item.avatarText}}</view>
+      <view class="worker-info">
+        <view class="worker-line">
+          <text class="worker-name">{{item.name || '未命名'}}</text>
+          <text class="tag {{item.status === 1 ? 'tag-finished' : 'tag-rejected'}}">{{item.statusText}}</text>
+        </view>
+        <view class="worker-phone">{{item.phone}}</view>
+      </view>
+    </view>
+
+    <view class="worker-tags" wx:if="{{item.catNames.length > 0}}">
+      <text class="tag cat-chip" wx:for="{{item.catNames}}" wx:for-item="catName" wx:key="*this">{{catName}}</text>
+    </view>
+    <view class="worker-tags-empty" wx:else>暂未设置擅长分类</view>
+
+    <view class="worker-stats">
+      <view class="stat-item">
+        <text class="stat-num">{{item.completedCount || 0}}</text>
+        <text class="stat-label">完成工单</text>
+      </view>
+      <view class="stat-item">
+        <text class="stat-num">{{item.avgRatingText}}</text>
+        <text class="stat-label">平均评分</text>
+      </view>
+      <view class="stat-item">
+        <text class="stat-num">{{item.ratingCount || 0}}</text>
+        <text class="stat-label">评价数</text>
+      </view>
+    </view>
+
+    <view class="worker-actions">
+      <button class="action-btn" size="mini" data-item="{{item}}" bindtap="showEdit">编辑</button>
+      <button class="action-btn {{item.status === 1 ? 'action-danger' : 'action-primary'}}" size="mini"
+              data-item="{{item}}" bindtap="toggleStatus">{{item.status === 1 ? '停用' : '开通'}}</button>
+    </view>
+  </view>
+
+  <!-- 新增按钮 -->
+  <button class="btn-primary add-btn" bindtap="showAdd">+ 新增维修工</button>
+
+  <view class="empty" wx:if="{{list.length === 0 && !loading}}">暂无维修工</view>
+  <view class="loading-text" wx:if="{{loading}}">加载中…</view>
+  <view class="loading-text" wx:elif="{{list.length > 0 && !hasMore}}">没有更多了</view>
+</view>
+
+<!-- 新增 / 编辑弹窗 -->
+<view class="modal-mask" wx:if="{{showModal}}" bindtap="hideModal">
+  <view class="modal-body" catchtap="noop">
+    <view class="modal-title">{{editingId ? '编辑维修工' : '新增维修工'}}</view>
+    <view class="form-item">
+      <text class="form-label"><text class="required">*</text>手机号</text>
+      <input class="form-input" type="number" maxlength="11" placeholder="请输入手机号"
+             value="{{formPhone}}" disabled="{{editingId ? true : false}}" bindinput="onFormPhoneInput" />
+    </view>
+    <view class="form-item">
+      <text class="form-label"><text class="required">*</text>姓名</text>
+      <input class="form-input" placeholder="请输入维修工姓名"
+             value="{{formName}}" bindinput="onFormNameInput" />
+    </view>
+    <view class="form-item">
+      <text class="form-label">简介</text>
+      <textarea class="form-textarea" placeholder="维修经验、擅长领域等（可选）"
+                value="{{formIntro}}" bindinput="onFormIntroInput" maxlength="200" />
+    </view>
+    <view class="form-item">
+      <text class="form-label">擅长分类</text>
+      <view class="cat-select">
+        <text class="cat-option {{item.checked ? 'cat-option-active' : ''}}"
+              wx:for="{{categories}}" wx:key="id"
+              data-id="{{item.id}}" bindtap="toggleFormCategory">{{item.name}}</text>
+      </view>
+      <view class="empty-small" wx:if="{{categories.length === 0}}">暂无可选分类</view>
+    </view>
+    <view class="form-item status-row" wx:if="{{editingId}}">
+      <text class="form-label">在职状态</text>
+      <switch checked="{{formStatus === 1}}" color="#2c6bf2" bindchange="onFormStatusChange" />
+    </view>
+    <view class="modal-actions">
+      <button class="btn-default modal-btn" bindtap="hideModal">取消</button>
+      <button class="btn-primary modal-btn" disabled="{{saving}}" bindtap="saveWorker">保存</button>
+    </view>
+  </view>
+</view>

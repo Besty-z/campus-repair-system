@@ -3,6 +3,7 @@ package com.campus.repair.vo;
 import com.campus.repair.entity.FaultCategory;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 
 /**
  * 故障分类返回对象（管理端，含状态字段，含停用分类）。
@@ -17,8 +18,11 @@ public class CategoryAdminVO implements Serializable {
     /** 分类名称 */
     private String name;
 
-    /** 归属地点类型 */
-    private String locationType;
+    /** 基础服务价（元） */
+    private BigDecimal price;
+
+    /** 服务图片URL */
+    private String imageUrl;
 
     /** 排序号 */
     private Integer sort;
@@ -42,7 +46,8 @@ public class CategoryAdminVO implements Serializable {
         CategoryAdminVO vo = new CategoryAdminVO();
         vo.setId(category.getId());
         vo.setName(category.getName());
-        vo.setLocationType(category.getLocationType());
+        vo.setPrice(category.getPrice());
+        vo.setImageUrl(category.getImageUrl());
         vo.setSort(category.getSort());
         vo.setStatus(category.getStatus());
         return vo;
@@ -85,21 +90,39 @@ public class CategoryAdminVO implements Serializable {
     }
 
     /**
-     * 获取归属地点类型。
+     * 获取基础服务价。
      *
-     * @return 地点类型
+     * @return 基础服务价（元）
      */
-    public String getLocationType() {
-        return locationType;
+    public BigDecimal getPrice() {
+        return price;
     }
 
     /**
-     * 设置归属地点类型。
+     * 设置基础服务价。
      *
-     * @param locationType 地点类型
+     * @param price 基础服务价（元）
      */
-    public void setLocationType(String locationType) {
-        this.locationType = locationType;
+    public void setPrice(BigDecimal price) {
+        this.price = price;
+    }
+
+    /**
+     * 获取服务图片URL。
+     *
+     * @return 服务图片URL
+     */
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    /**
+     * 设置服务图片URL。
+     *
+     * @param imageUrl 服务图片URL
+     */
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
     }
 
     /**

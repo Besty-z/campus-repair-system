@@ -7,8 +7,10 @@ import com.campus.repair.common.ResultCode;
 import com.campus.repair.dto.LoginDTO;
 import com.campus.repair.dto.RegisterDTO;
 import com.campus.repair.dto.SendCodeDTO;
+import com.campus.repair.entity.RepairWorker;
 import com.campus.repair.entity.SmsCode;
 import com.campus.repair.entity.SysUser;
+import com.campus.repair.mapper.RepairWorkerMapper;
 import com.campus.repair.mapper.SmsCodeMapper;
 import com.campus.repair.mapper.SysUserMapper;
 import com.campus.repair.service.AuthService;
@@ -51,17 +53,23 @@ public class AuthServiceImpl implements AuthService {
     /** JWT 工具 */
     private final JwtUtils jwtUtils;
 
+    /** 维修工档案 Mapper（切换到维修工身份时自动补建档案） */
+    private final RepairWorkerMapper repairWorkerMapper;
+
     /**
      * 构造认证服务。
      *
-     * @param smsCodeMapper 短信验证码 Mapper
-     * @param sysUserMapper 系统用户 Mapper
-     * @param jwtUtils      JWT 工具
+     * @param smsCodeMapper      短信验证码 Mapper
+     * @param sysUserMapper      系统用户 Mapper
+     * @param jwtUtils           JWT 工具
+     * @param repairWorkerMapper 维修工档案 Mapper
      */
-    public AuthServiceImpl(SmsCodeMapper smsCodeMapper, SysUserMapper sysUserMapper, JwtUtils jwtUtils) {
+    public AuthServiceImpl(SmsCodeMapper smsCodeMapper, SysUserMapper sysUserMapper,
+                           JwtUtils jwtUtils, RepairWorkerMapper repairWorkerMapper) {
         this.smsCodeMapper = smsCodeMapper;
         this.sysUserMapper = sysUserMapper;
         this.jwtUtils = jwtUtils;
+        this.repairWorkerMapper = repairWorkerMapper;
     }
 
     /**
@@ -140,6 +148,53 @@ public class AuthServiceImpl implements AuthService {
             throw new BizException(ResultCode.UNAUTHORIZED, "登录已失效，请重新登录");
         }
         return UserVO.from(user);
+    }
+
+    /**
+     * 课程演示用身份切换：更新账号角色并签发新令牌；切到维修工时自动补建维修工档案。
+     *
+     * @param userId 当前登录用户ID
+     * @param role   目标角色
+     * @return 新的登录令牌与用户信息
+     */
+    @Override
+    public LoginVO switchRole(Long userId, String role) {
+        SysUser user = sysUserMapper.selectById(userId);
+        if (user == null) {
+            throw new BizException(ResultCode.UNAUTHORIZED, "登录已失效，请重新登录");
+        }
+        if (Integer.valueOf(Constants.STATUS_DISABLED).equals(user.getStatus())) {
+            throw new BizException(ResultCode.FORBIDDEN, "账号已被禁用，请联系管理员");
+        }
+        LocalDateTime now = LocalDateTime.now();
+        user.setRole(role);
+        user.setUpdateTime(now);
+        sysUserMapper.updateById(user);
+        if (Constants.ROLE_WORKER.equals(role)) {
+            ensureWorkerProfile(userId, now);
+        }
+        log.info("用户 {} 切换身份为 {}", userId, role);
+        return buildLoginVO(user);
+    }
+
+    /**
+     * 确保维修工档案存在：不存在时补建一条（简介为空、在职），避免切到维修工后资料页报错。
+     *
+     * @param userId 用户ID
+     * @param now    当前时间
+     */
+    private void ensureWorkerProfile(Long userId, LocalDateTime now) {
+        Long count = repairWorkerMapper.selectCount(new LambdaQueryWrapper<RepairWorker>()
+                .eq(RepairWorker::getUserId, userId));
+        if (count != null && count > 0) {
+            return;
+        }
+        RepairWorker worker = new RepairWorker();
+        worker.setUserId(userId);
+        worker.setStatus(Constants.STATUS_ENABLED);
+        worker.setCreateTime(now);
+        worker.setUpdateTime(now);
+        repairWorkerMapper.insert(worker);
     }
 
     /**

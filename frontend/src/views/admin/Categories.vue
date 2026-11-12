@@ -1,24 +1,19 @@
 <template>
   <div class="page categories-page">
-    <!-- 顶部统计：两类地点各自的分类数量 -->
+    <!-- 顶部统计：分类总数 / 启用 / 停用 -->
     <div class="stat-grid">
       <div class="stat-tile is-brand">
         <div class="stat-tile-label">分类总数</div>
         <div class="stat-tile-value">{{ allData.length }}</div>
         <div class="stat-tile-icon"><el-icon><Menu /></el-icon></div>
       </div>
-      <div class="stat-tile is-cyan">
-        <div class="stat-tile-label">宿舍楼内</div>
-        <div class="stat-tile-value">{{ dormCount }}</div>
-        <div class="stat-tile-icon"><el-icon><HomeFilled /></el-icon></div>
-      </div>
       <div class="stat-tile is-mint">
-        <div class="stat-tile-label">校园公共区域</div>
-        <div class="stat-tile-value">{{ publicCount }}</div>
-        <div class="stat-tile-icon"><el-icon><Location /></el-icon></div>
+        <div class="stat-tile-label">启用</div>
+        <div class="stat-tile-value">{{ enabledCount }}</div>
+        <div class="stat-tile-icon"><el-icon><CircleCheck /></el-icon></div>
       </div>
       <div class="stat-tile is-amber">
-        <div class="stat-tile-label">已停用</div>
+        <div class="stat-tile-label">停用</div>
         <div class="stat-tile-value">{{ disabledCount }}</div>
         <div class="stat-tile-icon"><el-icon><CircleClose /></el-icon></div>
       </div>
@@ -28,28 +23,6 @@
       <div class="panel-hd">
         <div class="panel-title">故障分类管理</div>
         <el-button type="primary" @click="openDialog(null)">+ 新增分类</el-button>
-      </div>
-
-      <!-- 按地点类型筛选：胶囊样式 -->
-      <div class="status-tabs">
-        <button class="status-tab" :class="{ active: filterLocationType === '' }" @click="setFilter('')">
-          全部
-        </button>
-        <button
-          class="status-tab"
-          :class="{ active: filterLocationType === 'DORM' }"
-          @click="setFilter('DORM')"
-        >
-          宿舍楼内
-        </button>
-        <button
-          class="status-tab"
-          :class="{ active: filterLocationType === 'PUBLIC' }"
-          @click="setFilter('PUBLIC')"
-        >
-          校园公共区域
-        </button>
-        <span class="total-hint">共 {{ filteredData.length }} 个分类</span>
       </div>
 
       <!-- 分类表格 -->
@@ -62,14 +35,25 @@
             <span class="cat-name">{{ row.name }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="归属地点类型" width="150">
+        <el-table-column label="服务价格" width="120" align="center">
           <template #default="{ row }">
-            <span class="loc-type" :class="row.locationType === 'DORM' ? 'dorm' : 'public'">
-              {{ dictLabel(LOCATION_TYPE_MAP, row.locationType) }}
-            </span>
+            <span class="price-text">¥{{ formatPrice(row.price) }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="sort" label="排序号" width="90" align="center" />
+        <el-table-column label="服务图片" width="100" align="center">
+          <template #default="{ row }">
+            <el-image
+              v-if="row.imageUrl"
+              class="cat-thumb"
+              :src="row.imageUrl"
+              :preview-src-list="[row.imageUrl]"
+              preview-teleported
+              fit="cover"
+            />
+            <span v-else class="muted">-</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="sort" label="排序" width="90" align="center" />
         <el-table-column label="状态" width="90" align="center">
           <template #default="{ row }">
             <span class="status-pill" :class="row.status === 1 ? 'st-finished' : 'st-rejected'">
@@ -96,7 +80,7 @@
         <el-pagination
           v-model:current-page="pageNum"
           v-model:page-size="pageSize"
-          :total="filteredData.length"
+          :total="allData.length"
           :page-sizes="[10, 20, 50]"
           layout="total, sizes, prev, pager, next"
         />
@@ -109,11 +93,16 @@
         <el-form-item label="分类名称" prop="name">
           <el-input v-model="form.name" placeholder="如：网络故障" maxlength="50" />
         </el-form-item>
-        <el-form-item label="地点类型" prop="locationType">
-          <el-radio-group v-model="form.locationType" class="type-cards">
-            <el-radio value="DORM" border>宿舍楼内</el-radio>
-            <el-radio value="PUBLIC" border>校园公共区域</el-radio>
-          </el-radio-group>
+        <el-form-item label="服务价格（元）" prop="price">
+          <el-input-number v-model="form.price" :min="0" :precision="2" :step="10" />
+          <span class="sort-tip">首页展示「¥xx 起」，并用于工单费用预估</span>
+        </el-form-item>
+        <el-form-item label="服务图片 URL" prop="imageUrl">
+          <el-input
+            v-model="form.imageUrl"
+            placeholder="可空，如：https://example.com/service.png"
+            maxlength="500"
+          />
         </el-form-item>
         <el-form-item label="排序号" prop="sort">
           <el-input-number v-model="form.sort" :min="0" :max="999" />
@@ -141,20 +130,18 @@
 <script setup>
 import { computed, reactive, ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Menu, HomeFilled, Location, CircleClose } from '@element-plus/icons-vue'
+import { Menu, CircleCheck, CircleClose } from '@element-plus/icons-vue'
 import {
   listAllCategories,
   createCategory,
   updateCategory,
   deleteCategory
 } from '../../api/category'
-import { LOCATION_TYPE_MAP, dictLabel } from '../../utils/dict'
 
 const loading = ref(false)
 const allData = ref([]) // 全量分类（含停用）
 
-// 地点类型筛选与前端分页
-const filterLocationType = ref('')
+// 前端分页
 const pageNum = ref(1)
 const pageSize = ref(10)
 
@@ -164,28 +151,33 @@ const submitting = ref(false)
 const isEdit = ref(false)
 const editingId = ref(null)
 const formRef = ref()
-const form = reactive({ name: '', locationType: 'DORM', sort: 0, status: 1 })
+const form = reactive({ name: '', sort: 0, status: 1, price: 0, imageUrl: '' })
 
 const formRules = {
   name: [{ required: true, message: '请输入分类名称', trigger: 'blur' }],
-  locationType: [{ required: true, message: '请选择地点类型', trigger: 'change' }]
+  price: [
+    { required: true, message: '请输入服务价格', trigger: 'blur' },
+    {
+      validator: (rule, value, callback) => {
+        if (value == null || Number(value) < 0) {
+          callback(new Error('服务价格不能小于 0'))
+        } else {
+          callback()
+        }
+      },
+      trigger: 'change'
+    }
+  ]
 }
 
-// 概览统计：两类地点分类数量 + 停用数量
-const dormCount = computed(() => allData.value.filter((item) => item.locationType === 'DORM').length)
-const publicCount = computed(() => allData.value.filter((item) => item.locationType === 'PUBLIC').length)
+// 概览统计：分类总数 / 启用 / 停用
+const enabledCount = computed(() => allData.value.filter((item) => item.status === 1).length)
 const disabledCount = computed(() => allData.value.filter((item) => item.status !== 1).length)
-
-// 按地点类型筛选后的数据
-const filteredData = computed(() => {
-  if (!filterLocationType.value) return allData.value
-  return allData.value.filter((item) => item.locationType === filterLocationType.value)
-})
 
 // 当前页数据（分类数据量小，采用前端分页即可）
 const pagedData = computed(() => {
   const start = (pageNum.value - 1) * pageSize.value
-  return filteredData.value.slice(start, start + pageSize.value)
+  return allData.value.slice(start, start + pageSize.value)
 })
 
 // 加载全量分类（含停用，仅管理员接口）
@@ -199,12 +191,6 @@ async function loadData() {
   }
 }
 
-// 切换地点类型筛选时回到第一页
-function setFilter(value) {
-  filterLocationType.value = value
-  pageNum.value = 1
-}
-
 /**
  * 打开新增 / 编辑弹窗
  * @param {Object|null} row 编辑时传入行数据，新增传 null
@@ -213,9 +199,10 @@ function openDialog(row) {
   isEdit.value = !!row
   editingId.value = row?.id ?? null
   form.name = row?.name ?? ''
-  form.locationType = row?.locationType ?? 'DORM'
   form.sort = row?.sort ?? 0
   form.status = row?.status ?? 1
+  form.price = row?.price ?? 0
+  form.imageUrl = row?.imageUrl ?? ''
   dialogVisible.value = true
 }
 
@@ -228,17 +215,19 @@ async function handleSubmit() {
       // 编辑：携带状态字段（契约要求）
       await updateCategory(editingId.value, {
         name: form.name,
-        locationType: form.locationType,
         sort: form.sort,
-        status: form.status
+        status: form.status,
+        price: Number(form.price),
+        imageUrl: (form.imageUrl || '').trim()
       })
       ElMessage.success('分类修改成功')
     } else {
       // 新增：契约请求体不含状态字段
       await createCategory({
         name: form.name,
-        locationType: form.locationType,
-        sort: form.sort
+        sort: form.sort,
+        price: Number(form.price),
+        imageUrl: (form.imageUrl || '').trim()
       })
       ElMessage.success('分类新增成功')
     }
@@ -265,73 +254,26 @@ async function handleDelete(row) {
   loadData()
 }
 
+/**
+ * 价格格式化：最多保留两位小数并去掉多余的 0
+ * @param {number|string} value 价格
+ * @returns {string} 展示文本
+ */
+function formatPrice(value) {
+  const num = Number(value)
+  if (!Number.isFinite(num)) return '0'
+  return num.toFixed(2).replace(/\.?0+$/, '') || '0'
+}
+
 onMounted(loadData)
 </script>
 
 <style scoped>
-/* 分类筛选胶囊 */
-.status-tabs {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-bottom: 14px;
-}
-
-.status-tab {
-  height: 32px;
-  padding: 0 16px;
-  border: 1px solid #e3eaf5;
-  border-radius: 999px;
-  font-size: 13px;
-  color: #5b6b80;
-  background: #fff;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.status-tab:hover {
-  border-color: #bcd0fb;
-  color: #2c6bf2;
-}
-
-.status-tab.active {
-  border-color: transparent;
-  color: #fff;
-  background: linear-gradient(135deg, #2c6bf2 0%, #17bfd4 100%);
-  box-shadow: 0 8px 18px rgba(44, 107, 242, 0.24);
-}
-
-.total-hint {
-  margin-left: auto;
-  font-size: 12px;
-  color: #a9b4c6;
-}
-
 /* 分类名 */
 .cat-name {
   font-size: 13px;
   font-weight: 600;
   color: #1b2b45;
-}
-
-/* 地点类型标签 */
-.loc-type {
-  display: inline-block;
-  padding: 2px 10px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.loc-type.dorm {
-  color: #1b56d0;
-  background: #eef3ff;
-}
-
-.loc-type.public {
-  color: #0a7f5e;
-  background: #e7f8f2;
 }
 
 /* 状态胶囊 */
@@ -365,18 +307,20 @@ onMounted(loadData)
   color: #a9b4c6;
 }
 
-/* 弹窗中的地点类型按钮铺满 */
-.type-cards {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-  width: 100%;
+/* 服务价格：橙色强调 */
+.price-text {
+  font-size: 13px;
+  font-weight: 700;
+  color: #ff6b00;
 }
 
-.type-cards :deep(.el-radio) {
-  margin: 0;
-  height: 40px;
-  justify-content: center;
+/* 服务图片缩略图 */
+.cat-thumb {
+  width: 52px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid #eef2f9;
+  cursor: pointer;
 }
 
 .pagination {

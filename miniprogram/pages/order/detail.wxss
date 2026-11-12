@@ -200,6 +200,25 @@
   word-break: break-all;
 }
 
+/* 预估费用：橙色强调 */
+.price-text {
+  font-weight: 600;
+  color: #ff6b00;
+}
+
+/* 多选分类小标签 */
+.cat-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.cat-chip {
+  margin-right: 10rpx;
+  margin-bottom: 6rpx;
+  color: var(--brand);
+  background: var(--brand-soft);
+}
+
 /* 图片九宫格 */
 .img-grid {
   display: flex;
@@ -224,4 +243,119 @@
   color: #4b5f7a;
   font-size: 26rpx;
   line-height: 1.75;
+}
+
+/* 服务评价 */
+.rate-card {
+  background: linear-gradient(135deg, #fffaf0, #fff5e3);
+  border: 2rpx solid #fbeccd;
+}
+
+.rate-score-line {
+  display: flex;
+  align-items: baseline;
+}
+
+.rate-score {
+  font-size: 56rpx;
+  font-weight: 700;
+  color: #b98d51;
+  line-height: 1.1;
+}
+
+.rate-unit {
+  margin-left: 8rpx;
+  font-size: 24rpx;
+  color: #b98d51;
+}
+
+.rate-comment {
+  margin-top: 14rpx;
+  font-size: 26rpx;
+  line-height: 1.7;
+  color: #8a6a33;
+  word-break: break-all;
+}
+
+.rate-empty {
+  color: #b7a488;
+}
+
+/* 评价入口 */
+.rate-action {
+  margin: 30rpx 24rpx 0;
+}
+
+/* 评价弹窗 */
+.modal-mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 23, 40, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.modal-body {
+  width: 620rpx;
+  background: #ffffff;
+  border-radius: 32rpx;
+  padding: 42rpx 34rpx 34rpx;
+  box-shadow: 0 24rpx 60rpx rgba(18, 41, 74, 0.24);
+}
+
+.modal-title {
+  margin-bottom: 30rpx;
+  font-size: 32rpx;
+  font-weight: 700;
+  text-align: center;
+  color: var(--ink);
+}
+
+.star-row {
+  display: flex;
+  justify-content: center;
+}
+
+.star {
+  margin: 0 14rpx;
+  font-size: 62rpx;
+  line-height: 1;
+  color: #e2e8f2;
+}
+
+.star-active {
+  color: #f5a524;
+}
+
+.star-tip {
+  margin-top: 12rpx;
+  margin-bottom: 24rpx;
+  text-align: center;
+  font-size: 24rpx;
+  color: var(--muted);
+}
+
+.form-textarea {
+  width: 100%;
+  height: 170rpx;
+  background: #f6f8fd;
+  border: 2rpx solid #edf1f9;
+  border-radius: 18rpx;
+  padding: 20rpx 22rpx;
+  font-size: 27rpx;
+  color: var(--text);
+  box-sizing: border-box;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 20rpx;
+  margin-top: 26rpx;
+}
+
+.modal-btn {
+  flex: 1;
+  margin: 0;
 }

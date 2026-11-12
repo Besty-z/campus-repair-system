@@ -42,7 +42,15 @@
           </template>
         </el-table-column>
 
-        <el-table-column prop="categoryName" label="故障分类" width="130" />
+        <el-table-column label="故障分类" width="160">
+          <template #default="{ row }">
+            <div class="cat-tags">
+              <span v-for="(name, index) in orderCategoryNames(row)" :key="index" class="cat-tag">
+                {{ name }}
+              </span>
+            </div>
+          </template>
+        </el-table-column>
 
         <el-table-column label="描述摘要" min-width="180" show-overflow-tooltip>
           <template #default="{ row }">{{ row.description }}</template>
@@ -52,6 +60,15 @@
           <template #default="{ row }">
             <span v-if="row.urgent === 1" class="urgent-tag">紧急</span>
             <span v-else class="muted">-</span>
+          </template>
+        </el-table-column>
+
+        <el-table-column label="预估费用" width="110" align="center">
+          <template #default="{ row }">
+            <span v-if="row.estimatedPrice != null" class="est-price">
+              ¥{{ formatPrice(row.estimatedPrice) }}
+            </span>
+            <span v-else class="muted">面议</span>
           </template>
         </el-table-column>
 
@@ -69,9 +86,19 @@
           </template>
         </el-table-column>
 
-        <el-table-column label="操作" width="90" align="center" fixed="right">
+        <el-table-column label="操作" width="150" align="center" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" link size="small" @click="handleView(row)">详情</el-button>
+            <!-- 已完成且未评价的工单可评价维修 -->
+            <el-button
+              v-if="row.status === 'FINISHED' && row.ratingScore == null"
+              type="warning"
+              link
+              size="small"
+              @click="openRating(row)"
+            >
+              评价维修
+            </el-button>
           </template>
         </el-table-column>
 
@@ -99,12 +126,50 @@
 
     <!-- 工单详情弹窗（含图片预览、维修备注） -->
     <DetailDialog v-model:visible="detailVisible" :order-id="currentOrderId" />
+
+    <!-- 评价维修弹窗：1-5 星 + 评价内容 -->
+    <el-dialog v-model="ratingVisible" title="评价维修" width="460px">
+      <div class="dlg-order">
+        <span class="order-no">{{ ratingRow?.orderNo }}</span>
+        <span class="status-pill" :class="`st-${(ratingRow?.status || '').toLowerCase()}`">
+          {{ dictLabel(STATUS_MAP, ratingRow?.status) }}
+        </span>
+      </div>
+
+      <el-form label-position="top">
+        <el-form-item label="维修评分" required>
+          <el-rate
+            v-model="ratingForm.score"
+            :texts="['很不满意', '不满意', '一般', '满意', '非常满意']"
+            show-text
+          />
+        </el-form-item>
+        <el-form-item label="评价内容">
+          <el-input
+            v-model="ratingForm.comment"
+            type="textarea"
+            :rows="3"
+            maxlength="200"
+            show-word-limit
+            placeholder="说说本次维修体验（选填）"
+          />
+        </el-form-item>
+      </el-form>
+
+      <template #footer>
+        <el-button @click="ratingVisible = false">取 消</el-button>
+        <el-button type="primary" :loading="ratingSubmitting" @click="handleRating">
+          提交评价
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { reactive, ref, onMounted } from 'vue'
-import { getMyOrders } from '../../api/order'
+import { ElMessage } from 'element-plus'
+import { getMyOrders, rateOrder } from '../../api/order'
 import { STATUS_MAP, STATUS_OPTIONS, dictLabel, formatLocation } from '../../utils/dict'
 import DetailDialog from './DetailDialog.vue'
 
@@ -122,6 +187,12 @@ const query = reactive({
 // 详情弹窗状态
 const detailVisible = ref(false)
 const currentOrderId = ref(null)
+
+// 评价弹窗状态
+const ratingVisible = ref(false)
+const ratingSubmitting = ref(false)
+const ratingRow = ref(null)
+const ratingForm = reactive({ score: 5, comment: '' })
 
 // 加载我的工单列表（按创建时间倒序，后端默认）
 async function loadData() {
@@ -158,10 +229,59 @@ function handleView(row) {
   detailVisible.value = true
 }
 
+// 打开评价弹窗
+function openRating(row) {
+  ratingRow.value = row
+  ratingForm.score = 5
+  ratingForm.comment = ''
+  ratingVisible.value = true
+}
+
+// 提交评价
+async function handleRating() {
+  if (!ratingForm.score) {
+    ElMessage.warning('请选择评分星级')
+    return
+  }
+  ratingSubmitting.value = true
+  try {
+    await rateOrder(ratingRow.value.id, {
+      score: ratingForm.score,
+      comment: ratingForm.comment || undefined
+    })
+    ElMessage.success('评价成功，感谢你的反馈')
+    ratingVisible.value = false
+    loadData()
+  } finally {
+    ratingSubmitting.value = false
+  }
+}
+
 // 时间格式化：T 换空格并去掉秒
 function formatTime(value) {
   if (!value) return '-'
   return String(value).replace('T', ' ').slice(0, 16)
+}
+
+/**
+ * 价格格式化：最多保留两位小数并去掉多余的 0
+ * @param {number|string} value 价格
+ * @returns {string} 展示文本
+ */
+function formatPrice(value) {
+  const num = Number(value)
+  if (!Number.isFinite(num)) return '0'
+  return num.toFixed(2).replace(/\.?0+$/, '') || '0'
+}
+
+/**
+ * 工单分类展示文本：优先使用 categoryNames（多选），否则回退 categoryName
+ * @param {Object} order 工单对象
+ * @returns {string[]} 分类名称数组
+ */
+function orderCategoryNames(order) {
+  if (order?.categoryNames?.length) return order.categoryNames
+  return order?.categoryName ? [order.categoryName] : []
 }
 
 onMounted(loadData)
@@ -273,6 +393,21 @@ onMounted(loadData)
   color: #a9b4c6;
 }
 
+/* 多选分类小标签 */
+.cat-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.cat-tag {
+  padding: 1px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  color: #1b56d0;
+  background: #eef3ff;
+}
+
 .urgent-tag {
   padding: 2px 9px;
   border-radius: 999px;
@@ -280,6 +415,13 @@ onMounted(loadData)
   font-weight: 600;
   color: #b03636;
   background: #fdeeee;
+}
+
+/* 预估费用：橙色强调 */
+.est-price {
+  font-size: 13px;
+  font-weight: 700;
+  color: #ff6b00;
 }
 
 /* 状态胶囊 */
@@ -315,5 +457,16 @@ onMounted(loadData)
   display: flex;
   justify-content: flex-end;
   margin-top: 16px;
+}
+
+/* 评价弹窗内工单信息条 */
+.dlg-order {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  margin-bottom: 16px;
+  border-radius: 12px;
+  background: #f8fafd;
 }
 </style>

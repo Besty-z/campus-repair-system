@@ -1,0 +1,78 @@
+<!-- 维修工：我的任务 -->
+<view class="tasks-page">
+  <!-- 状态筛选 -->
+  <scroll-view scroll-x class="tabs" enhanced show-scrollbar="{{false}}">
+    <view class="tab {{activeTab === index ? 'tab-active' : ''}}"
+          wx:for="{{tabs}}" wx:key="value"
+          data-index="{{index}}" bindtap="onTabChange">{{item.label}}</view>
+  </scroll-view>
+
+  <!-- 任务卡片 -->
+  <view class="card task-card {{item.urgent === 1 ? 'task-urgent' : ''}}"
+        wx:for="{{list}}" wx:key="id">
+    <view class="task-head" data-id="{{item.id}}" bindtap="goDetail">
+      <view class="task-mark"></view>
+      <view class="task-title-wrap">
+        <view class="task-title">
+          <text class="tag cat-chip" wx:for="{{item.catNames}}" wx:for-item="catName" wx:key="*this">{{catName}}</text>
+        </view>
+        <view class="task-no">工单号 {{item.orderNo}}</view>
+      </view>
+      <view class="head-right">
+        <text class="urgent-tag" wx:if="{{item.urgent === 1}}">紧急</text>
+        <text class="tag" style="background: {{item.statusColor}}1a; color: {{item.statusColor}};">{{item.statusText}}</text>
+      </view>
+    </view>
+
+    <view data-id="{{item.id}}" bindtap="goDetail">
+      <view class="task-row">
+        <text class="row-label">报修地点</text>
+        <text class="row-value">{{item.locationText}}</text>
+      </view>
+      <view class="task-row">
+        <text class="row-label">报修人</text>
+        <text class="row-value">{{item.userNickname}}（{{item.userPhone}}）</text>
+      </view>
+      <view class="task-row" wx:if="{{item.descSummary}}">
+        <text class="row-label">故障描述</text>
+        <text class="row-value">{{item.descSummary}}</text>
+      </view>
+    </view>
+
+    <view class="task-foot">
+      <text class="task-time">{{item.createTime}}</text>
+      <view class="task-actions">
+        <text class="task-link" data-id="{{item.id}}" catchtap="goDetail">详情 ›</text>
+        <button class="task-btn" size="mini" wx:if="{{item.status === 'PENDING'}}"
+                data-id="{{item.id}}" catchtap="acceptOrder">接单</button>
+        <button class="task-btn" size="mini" wx:if="{{item.status === 'IN_PROGRESS'}}"
+                data-id="{{item.id}}" catchtap="openFinish">完成维修</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 空状态 / 加载提示 -->
+  <view class="empty-state" wx:if="{{list.length === 0 && !loading}}">
+    <view class="empty-icon">≡</view>
+    <view class="empty-text">暂无任务，去抢单大厅看看</view>
+    <view class="empty-btn" bindtap="goPool">去抢单</view>
+  </view>
+  <view class="loading-text" wx:if="{{loading}}">加载中…</view>
+  <view class="loading-text" wx:elif="{{list.length > 0 && !hasMore}}">没有更多了</view>
+</view>
+
+<!-- 完成维修弹窗 -->
+<view class="modal-mask" wx:if="{{showFinishModal}}" bindtap="hideFinish">
+  <view class="modal-body" catchtap="noop">
+    <view class="modal-title">完成维修</view>
+    <view class="form-item">
+      <text class="form-label">维修备注</text>
+      <textarea class="form-textarea" placeholder="请填写维修处理情况（可选）"
+                value="{{finishRemark}}" bindinput="onRemarkInput" maxlength="200" />
+    </view>
+    <view class="modal-actions">
+      <button class="btn-default modal-btn" bindtap="hideFinish">取消</button>
+      <button class="btn-primary modal-btn" bindtap="submitFinish">确认完成</button>
+    </view>
+  </view>
+</view>

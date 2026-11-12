@@ -46,7 +46,7 @@
       <div class="form-card">
         <div class="form-head">
           <h2>{{ activeTab === 'login' ? '欢迎回来' : '创建账号' }}</h2>
-          <p>{{ activeTab === 'login' ? '使用手机号验证码登录' : '手机号注册，注册后即为普通用户' }}</p>
+          <p>{{ activeTab === 'login' ? '使用手机号验证码登录' : `手机号注册，注册后即为${ROLE_MAP.USER.label}` }}</p>
         </div>
 
         <!-- 课程演示提示：验证码不发真实短信，查看后端控制台日志 -->
@@ -157,6 +157,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { sendCode, login, register } from '../../api/auth'
 import { useUserStore } from '../../store/user'
+import { ROLE_MAP } from '../../utils/dict'
 
 const router = useRouter()
 const userStore = useUserStore()

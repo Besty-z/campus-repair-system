@@ -13,7 +13,7 @@
         <el-form ref="formRef" :model="form" :rules="rules" label-position="top" class="repair-form">
           <!-- 地点类型：卡片式选择，直观区分宿舍 / 公共区域 -->
           <el-form-item label="报修地点类型" prop="locationType">
-            <el-radio-group v-model="form.locationType" class="type-cards" @change="handleLocationTypeChange">
+            <el-radio-group v-model="form.locationType" class="type-cards">
               <el-radio value="DORM" class="type-card">
                 <span class="type-icon dorm">🏠</span>
                 <span class="type-text">
@@ -50,22 +50,30 @@
             />
           </el-form-item>
 
-          <!-- 故障分类：根据地点类型联动加载，末尾提供「其他（自行填写）」 -->
-          <el-form-item label="故障分类" prop="categoryId">
-            <el-select
-              v-model="form.categoryId"
-              placeholder="请选择故障分类"
-              style="width: 100%"
-              @change="handleCategoryChange"
-            >
-              <el-option
+          <!-- 故障分类：按维修工种多选，末尾提供「其他（自行填写）」 -->
+          <el-form-item label="故障分类" prop="categoryIds">
+            <div class="category-picker">
+              <button
                 v-for="item in categoryOptions"
                 :key="item.id"
-                :label="item.name"
-                :value="item.id"
-              />
-              <el-option label="其他（自行填写）" :value="OTHER_CATEGORY_VALUE" />
-            </el-select>
+                type="button"
+                class="category-chip"
+                :class="{ active: form.categoryIds.includes(item.id) }"
+                @click="toggleCategory(item.id)"
+              >
+                <span class="chip-name">{{ item.name }}</span>
+                <span class="chip-price">¥{{ formatPrice(item.price) }}</span>
+              </button>
+              <button
+                type="button"
+                class="category-chip is-other"
+                :class="{ active: isCustomCategory }"
+                @click="toggleOtherCategory"
+              >
+                其他（自行填写）
+              </button>
+            </div>
+            <p class="category-tip">可多选，至少选择 1 个分类</p>
           </el-form-item>
 
           <!-- 选择「其他」时必填自定义故障类型（≤50字） -->
@@ -77,6 +85,43 @@
               show-word-limit
             />
           </el-form-item>
+
+          <!-- 费用预估：按已选服务分类单价求和，会员自动 8 折 -->
+          <div class="fee-panel">
+            <div class="fee-head">
+              <span class="fee-title">费用预估</span>
+              <span class="fee-mode">{{ isCustomCategory ? '面议' : '按服务项计算' }}</span>
+            </div>
+
+            <template v-if="isCustomCategory">
+              <p class="fee-negotiable">「其他」故障类型需师傅现场评估，费用面议。</p>
+            </template>
+            <template v-else-if="selectedCategories.length">
+              <div v-for="item in selectedCategories" :key="item.id" class="fee-line">
+                <span class="fee-name">{{ item.name }}</span>
+                <span class="fee-unit">¥{{ formatPrice(item.price) }}</span>
+              </div>
+              <div class="fee-line is-total">
+                <span>合计</span>
+                <span>¥{{ formatPrice(feeTotal) }}</span>
+              </div>
+              <template v-if="isVip">
+                <div class="fee-line is-discount">
+                  <span>会员 8 折</span>
+                  <span>-¥{{ formatPrice(feeDiscount) }}</span>
+                </div>
+                <div class="fee-sum">
+                  <span>预估费用</span>
+                  <strong>¥{{ formatPrice(feePayable) }}</strong>
+                </div>
+              </template>
+              <p v-else class="fee-upgrade">
+                <span class="fee-crown">💎</span>
+                开通会员可享 8 折，预计可省 ¥{{ formatPrice(feeDiscount) }}
+              </p>
+            </template>
+            <p v-else class="fee-empty">请选择故障分类后查看预估费用</p>
+          </div>
 
           <!-- 故障描述 -->
           <el-form-item label="故障描述" prop="description">
@@ -202,12 +247,14 @@
 
 <script setup>
 import { computed, reactive, ref, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import { listCategories } from '../../api/category'
 import { createOrder } from '../../api/order'
 import { useUserStore } from '../../store/user'
 
+const route = useRoute()
 const userStore = useUserStore()
 
 // 是否会员（会员可上传 5 张图、自选预约时间、标记紧急）
@@ -218,8 +265,8 @@ const maxImageCount = computed(() => (isVip.value ? 5 : 1))
 const formRef = ref()
 const submitting = ref(false)
 
-// 分类下拉的「其他（自行填写）」哨兵值：避免与 Long 型分类 ID 混用
-const OTHER_CATEGORY_VALUE = 'OTHER'
+// 是否选中了「其他（自行填写）」：与普通分类互斥
+const otherSelected = ref(false)
 
 // 表单数据（字段与后端接口契约保持一致）
 const form = reactive({
@@ -227,7 +274,7 @@ const form = reactive({
   buildingNo: '', // 宿舍楼号（DORM 必填）
   roomNo: '', // 房间号（DORM 必填）
   publicLocation: '', // 公共区域具体位置（PUBLIC 必填）
-  categoryId: null, // 故障分类 ID（选择「其他」时为哨兵值 OTHER）
+  categoryIds: [], // 故障分类 ID 数组（可多选；选择「其他」时为空数组）
   customCategory: '', // 自定义故障类型（选择「其他」时填写）
   description: '', // 故障描述
   appointmentTime: null, // 预约上门时间（仅会员）
@@ -243,11 +290,35 @@ const uploadHeaders = computed(() => ({
   Authorization: `Bearer ${userStore.token}`
 }))
 
-// 故障分类下拉选项（随地点类型联动）
+// 故障分类选项（后端已按维修工种划分，无需按地点类型过滤）
 const categoryOptions = ref([])
 
 // 是否选中了「其他（自行填写）」
-const isCustomCategory = computed(() => form.categoryId === OTHER_CATEGORY_VALUE)
+const isCustomCategory = computed(() => otherSelected.value)
+
+// 已选服务分类（含单价），用于费用预估
+const selectedCategories = computed(() =>
+  categoryOptions.value.filter((item) => form.categoryIds.includes(item.id))
+)
+// 费用合计：所选分类单价之和
+const feeTotal = computed(() =>
+  selectedCategories.value.reduce((sum, item) => sum + Number(item.price || 0), 0)
+)
+// 会员折扣金额：与后端一致按 8 折计算并保留两位小数
+const feeDiscount = computed(() => Math.round(feeTotal.value * 0.2 * 100) / 100)
+// 会员预估费用
+const feePayable = computed(() => Math.round(feeTotal.value * 0.8 * 100) / 100)
+
+/**
+ * 价格格式化：最多保留两位小数并去掉多余的 0
+ * @param {number|string} value 价格
+ * @returns {string} 展示文本
+ */
+function formatPrice(value) {
+  const num = Number(value)
+  if (!Number.isFinite(num)) return '0'
+  return num.toFixed(2).replace(/\.?0+$/, '') || '0'
+}
 
 // 表单校验规则（与后端校验保持一致）
 const rules = {
@@ -255,7 +326,19 @@ const rules = {
   buildingNo: [{ required: true, message: '请输入宿舍楼号', trigger: 'blur' }],
   roomNo: [{ required: true, message: '请输入房间号', trigger: 'blur' }],
   publicLocation: [{ required: true, message: '请输入具体位置', trigger: 'blur' }],
-  categoryId: [{ required: true, message: '请选择故障分类', trigger: 'change' }],
+  categoryIds: [
+    {
+      validator: (rule, value, callback) => {
+        // 选择「其他」时无需普通分类；否则至少选择 1 个
+        if (!otherSelected.value && (!Array.isArray(value) || value.length === 0)) {
+          callback(new Error('请至少选择 1 个故障分类'))
+        } else {
+          callback()
+        }
+      },
+      trigger: 'change'
+    }
+  ],
   customCategory: [
     {
       validator: (rule, value, callback) => {
@@ -271,27 +354,49 @@ const rules = {
   description: [{ required: true, message: '请填写故障描述', trigger: 'blur' }]
 }
 
-/**
- * 加载故障分类列表（按地点类型过滤）
- * @param {string} locationType 地点类型 DORM/PUBLIC
- */
-async function loadCategories(locationType) {
-  const res = await listCategories(locationType)
+// 加载启用中的故障分类列表
+async function loadCategories() {
+  const res = await listCategories()
   categoryOptions.value = res.data || []
+  applyPreselectedCategory()
 }
 
-// 切换地点类型：清空已选分类与自定义输入，并重新加载该类型下的分类
-function handleLocationTypeChange() {
-  form.categoryId = null
+// 从首页服务卡片带来的 categoryId 自动选中对应分类
+function applyPreselectedCategory() {
+  const raw = route.query.categoryId
+  const id = Number(Array.isArray(raw) ? raw[0] : raw)
+  if (!id) return
+  if (!categoryOptions.value.some((item) => item.id === id)) return
+  otherSelected.value = false
   form.customCategory = ''
-  loadCategories(form.locationType)
+  form.categoryIds = [id]
 }
 
-// 切换分类：切回具体分类时清空自定义故障类型
-function handleCategoryChange() {
-  if (!isCustomCategory.value) {
+/**
+ * 切换普通分类选中状态（多选）；选择普通分类时取消「其他」
+ * @param {number} id 分类 ID
+ */
+function toggleCategory(id) {
+  otherSelected.value = false
+  form.customCategory = ''
+  const index = form.categoryIds.indexOf(id)
+  if (index >= 0) {
+    form.categoryIds.splice(index, 1)
+  } else {
+    form.categoryIds.push(id)
+  }
+  formRef.value?.clearValidate(['categoryIds', 'customCategory'])
+}
+
+// 切换「其他」：选中时清空已选普通分类，取消时清空自定义内容
+function toggleOtherCategory() {
+  otherSelected.value = !otherSelected.value
+  if (otherSelected.value) {
+    form.categoryIds = []
+  } else {
     form.customCategory = ''
   }
+  formRef.value?.clearValidate(['categoryIds', 'customCategory'])
 }
 
 /**
@@ -364,15 +469,14 @@ async function handleSubmit() {
   await formRef.value.validate()
   submitting.value = true
   try {
-    // 选择「其他」时 categoryId 传 null，改传 customCategory
-    const isOther = form.categoryId === OTHER_CATEGORY_VALUE
+    // 选择「其他」时 categoryIds 传空数组，改传 customCategory（两者互斥）
     const payload = {
       locationType: form.locationType,
       buildingNo: form.locationType === 'DORM' ? form.buildingNo : null,
       roomNo: form.locationType === 'DORM' ? form.roomNo : null,
       publicLocation: form.locationType === 'PUBLIC' ? form.publicLocation : null,
-      categoryId: isOther ? null : form.categoryId,
-      customCategory: isOther ? form.customCategory.trim() : null,
+      categoryIds: otherSelected.value ? [] : [...form.categoryIds],
+      customCategory: otherSelected.value ? form.customCategory.trim() : null,
       description: form.description,
       images: imageUrls.value,
       urgent: isVip.value ? form.urgent : 0,
@@ -390,18 +494,18 @@ async function handleSubmit() {
 function handleReset() {
   formRef.value.resetFields()
   form.locationType = 'DORM'
-  form.categoryId = null
+  form.categoryIds = []
   form.customCategory = ''
+  otherSelected.value = false
   form.appointmentTime = null
   form.urgent = 0
   imageUrls.value = []
   fileList.value = []
-  loadCategories(form.locationType)
 }
 
-// 页面初始化：加载默认地点类型（宿舍楼内）的分类
+// 页面初始化：加载故障分类
 onMounted(() => {
-  loadCategories(form.locationType)
+  loadCategories()
 })
 </script>
 
@@ -518,6 +622,177 @@ onMounted(() => {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
+}
+
+/* 故障分类多选标签 */
+.category-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  width: 100%;
+}
+
+.category-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 16px;
+  border: 1px solid #e3eaf5;
+  border-radius: 999px;
+  font-size: 13px;
+  color: #5b6b80;
+  background: #fff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+/* 标签上的服务单价：橙色强调 */
+.chip-price {
+  font-size: 12px;
+  font-weight: 700;
+  color: #ff6b00;
+}
+
+.category-chip.active .chip-price {
+  color: #fff;
+  opacity: 0.92;
+}
+
+.category-chip:hover {
+  border-color: #bcd0fb;
+  color: #2c6bf2;
+}
+
+/* 选中态：品牌渐变，与状态胶囊保持一致 */
+.category-chip.active {
+  border-color: transparent;
+  color: #fff;
+  background: linear-gradient(135deg, #2c6bf2 0%, #17bfd4 100%);
+  box-shadow: 0 8px 18px rgba(44, 107, 242, 0.24);
+}
+
+/* 「其他」用虚线区分，选中后同样高亮 */
+.category-chip.is-other {
+  border-style: dashed;
+}
+
+.category-chip.is-other.active {
+  border-style: solid;
+}
+
+.category-tip {
+  width: 100%;
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: #a9b4c6;
+}
+
+/* ============ 费用预估面板 ============ */
+.fee-panel {
+  margin: 2px 0 18px;
+  padding: 16px 18px;
+  border: 1px solid #ffe3cf;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #fff8f2 0%, #fff 70%);
+}
+
+.fee-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.fee-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1b2b45;
+}
+
+.fee-mode {
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  color: #ff8a3d;
+  background: #fff0e4;
+}
+
+.fee-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 5px 0;
+  font-size: 13px;
+  color: #5b6b80;
+}
+
+.fee-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fee-unit {
+  font-weight: 600;
+  color: #ff6b00;
+}
+
+.fee-line.is-total {
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px dashed #ffe0c9;
+  font-weight: 600;
+  color: #1b2b45;
+}
+
+.fee-line.is-total span:last-child {
+  font-weight: 700;
+  color: #ff6b00;
+}
+
+.fee-line.is-discount span:last-child {
+  color: #ff6b00;
+}
+
+.fee-sum {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #ffe0c9;
+  font-size: 13px;
+  color: #5b6b80;
+}
+
+.fee-sum strong {
+  font-size: 22px;
+  font-weight: 800;
+  color: #ff6b00;
+}
+
+.fee-upgrade {
+  margin: 10px 0 0;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 12px;
+  color: #a76a05;
+  background: #fff5e3;
+}
+
+.fee-crown {
+  margin-right: 6px;
+}
+
+.fee-empty,
+.fee-negotiable {
+  margin: 0;
+  padding: 4px 0;
+  font-size: 12px;
+  color: #7a879b;
 }
 
 /* 上传区 */

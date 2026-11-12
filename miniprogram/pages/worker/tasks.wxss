@@ -1,0 +1,228 @@
+/* 维修工「我的任务」样式 */
+
+.tasks-page {
+  padding-bottom: 30rpx;
+}
+
+/* 状态筛选 */
+.tabs {
+  background: rgba(244, 247, 252, 0.96);
+  white-space: nowrap;
+  padding: 20rpx 20rpx 16rpx;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  box-sizing: border-box;
+}
+
+.tab {
+  display: inline-block;
+  padding: 12rpx 30rpx;
+  margin-right: 14rpx;
+  font-size: 26rpx;
+  color: #5b6b7c;
+  background: #ffffff;
+  border: 2rpx solid var(--line);
+  border-radius: 999rpx;
+}
+
+.tab-active {
+  background: linear-gradient(135deg, #2c6bf2 0%, #17bfd4 100%);
+  border-color: transparent;
+  color: #ffffff;
+  font-weight: 600;
+  box-shadow: 0 8rpx 20rpx rgba(44, 107, 242, 0.24);
+}
+
+/* 任务卡片 */
+.task-card {
+  position: relative;
+  margin: 0 24rpx 24rpx;
+  padding: 28rpx;
+  border-radius: 28rpx;
+}
+
+.task-urgent {
+  background: linear-gradient(180deg, #fff8f8 0%, #ffffff 42%);
+  box-shadow: 0 16rpx 44rpx rgba(239, 75, 75, 0.12);
+}
+
+.task-urgent::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 34rpx;
+  bottom: 34rpx;
+  width: 8rpx;
+  border-radius: 0 8rpx 8rpx 0;
+  background: var(--danger);
+}
+
+.task-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding-bottom: 20rpx;
+  border-bottom: 2rpx solid #f2f6fb;
+}
+
+.task-mark {
+  width: 8rpx;
+  height: 44rpx;
+  margin-right: 18rpx;
+  border-radius: 8rpx;
+  background: linear-gradient(180deg, #2c6bf2, #17bfd4);
+  flex-shrink: 0;
+}
+
+.task-title-wrap {
+  flex: 1;
+  min-width: 0;
+}
+
+.task-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.cat-chip {
+  margin-right: 10rpx;
+  margin-bottom: 4rpx;
+  color: var(--brand);
+  background: var(--brand-soft);
+}
+
+.task-no {
+  margin-top: 8rpx;
+  font-size: 22rpx;
+  color: #a6b1c2;
+}
+
+.head-right {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  margin-left: 16rpx;
+}
+
+.urgent-tag {
+  margin-right: 10rpx;
+  padding: 3rpx 14rpx;
+  font-size: 20rpx;
+  font-weight: 700;
+  color: var(--danger);
+  background: rgba(239, 75, 75, 0.1);
+  border-radius: 999rpx;
+}
+
+.task-row {
+  display: flex;
+  margin-top: 14rpx;
+  font-size: 25rpx;
+  line-height: 1.55;
+}
+
+.row-label {
+  width: 130rpx;
+  flex-shrink: 0;
+  color: #98a5b8;
+}
+
+.row-value {
+  flex: 1;
+  color: var(--text);
+  word-break: break-all;
+}
+
+.task-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 18rpx;
+  padding-top: 18rpx;
+  border-top: 2rpx solid #f2f6fb;
+}
+
+.task-time {
+  font-size: 22rpx;
+  color: #a6b1c2;
+}
+
+.task-actions {
+  display: flex;
+  align-items: center;
+}
+
+.task-link {
+  margin-right: 20rpx;
+  font-size: 24rpx;
+  color: var(--brand);
+}
+
+.task-btn {
+  height: 64rpx;
+  line-height: 64rpx;
+  padding: 0 32rpx;
+  margin: 0;
+  background: linear-gradient(135deg, #2c6bf2 0%, #17bfd4 100%);
+  color: #ffffff;
+  border-radius: 999rpx;
+  font-size: 24rpx;
+  font-weight: 600;
+  box-shadow: 0 8rpx 18rpx rgba(44, 107, 242, 0.22);
+}
+
+.task-btn::after {
+  border: none;
+}
+
+/* 弹窗 */
+.modal-mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 23, 40, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.modal-body {
+  width: 620rpx;
+  background: #ffffff;
+  border-radius: 32rpx;
+  padding: 42rpx 34rpx 34rpx;
+  box-shadow: 0 24rpx 60rpx rgba(18, 41, 74, 0.24);
+}
+
+.modal-title {
+  margin-bottom: 34rpx;
+  font-size: 32rpx;
+  font-weight: 700;
+  text-align: center;
+  color: var(--ink);
+}
+
+.form-textarea {
+  width: 100%;
+  height: 180rpx;
+  background: #f6f8fd;
+  border: 2rpx solid #edf1f9;
+  border-radius: 18rpx;
+  padding: 20rpx 22rpx;
+  font-size: 27rpx;
+  color: var(--text);
+  box-sizing: border-box;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 20rpx;
+  margin-top: 26rpx;
+}
+
+.modal-btn {
+  flex: 1;
+  margin: 0;
+}

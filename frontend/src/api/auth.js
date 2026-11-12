@@ -21,3 +21,8 @@ export function register(data) {
 export function getProfile() {
   return request.get('/auth/profile')
 }
+
+// 切换当前账号身份（课程演示）：后端更新角色并签发新 token
+export function switchRole(role) {
+  return request.put('/auth/switch-role', { role })
+}

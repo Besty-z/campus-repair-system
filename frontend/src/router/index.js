@@ -47,11 +47,39 @@ const routes = [
         meta: { title: '报修统计', roles: ['VIP'] }
       },
       {
+        // 维修工：我的任务（仅 WORKER）
+        path: 'worker/tasks',
+        name: 'WorkerTasks',
+        component: () => import('../views/worker/Tasks.vue'),
+        meta: { title: '我的任务', roles: ['WORKER'] }
+      },
+      {
+        // 维修工：抢单大厅（仅 WORKER）
+        path: 'worker/pool',
+        name: 'WorkerPool',
+        component: () => import('../views/worker/Pool.vue'),
+        meta: { title: '抢单大厅', roles: ['WORKER'] }
+      },
+      {
+        // 维修工：我的资料（仅 WORKER）
+        path: 'worker/profile',
+        name: 'WorkerProfile',
+        component: () => import('../views/worker/Profile.vue'),
+        meta: { title: '我的资料', roles: ['WORKER'] }
+      },
+      {
         // 工单管理（仅 ADMIN）
         path: 'admin/orders',
         name: 'AdminOrders',
         component: () => import('../views/admin/Orders.vue'),
         meta: { title: '工单管理', roles: ['ADMIN'] }
+      },
+      {
+        // 维修工管理（仅 ADMIN）
+        path: 'admin/workers',
+        name: 'AdminWorkers',
+        component: () => import('../views/admin/Workers.vue'),
+        meta: { title: '维修工管理', roles: ['ADMIN'] }
       },
       {
         // 故障分类管理（仅 ADMIN）

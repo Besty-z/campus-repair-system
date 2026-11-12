@@ -56,14 +56,16 @@ const STATUS_DESC_MAP = {
 const ROLE_MAP = {
   USER: '普通用户',
   VIP: '会员',
-  ADMIN: '维修管理员'
+  ADMIN: '维修管理员',
+  WORKER: '维修工'
 };
 
-/** 角色颜色映射：普通用户灰、会员金、管理员蓝 */
+/** 角色颜色映射：普通用户灰、会员金、管理员蓝、维修工紫 */
 const ROLE_COLOR_MAP = {
   USER: '#7a879b',
   VIP: '#c8a063',
-  ADMIN: '#2c6bf2'
+  ADMIN: '#2c6bf2',
+  WORKER: '#6f5ce0'
 };
 
 /** 地点类型中文映射 */
@@ -138,6 +140,19 @@ function summary(text, len) {
 }
 
 /**
+ * 金额格式化：保留两位小数并去掉末尾多余的 0
+ * @param {number|string} value 金额
+ * @returns {string} 如 80、64.5、64.25；无效值返回空串
+ */
+function formatMoney(value) {
+  const num = Number(value);
+  if (!isFinite(num)) {
+    return '';
+  }
+  return (Math.round(num * 100) / 100).toString();
+}
+
+/**
  * 拼接图片完整访问地址
  * 后端返回的图片相对路径形如 /uploads/2026/11/08/a.jpg，
  * 由于后端 context-path 为 /api，图片真实地址在 /api 下
@@ -158,6 +173,7 @@ function imageUrl(path) {
 
 module.exports = {
   formatTime,
+  formatMoney,
   imageUrl,
   statusText,
   statusColor,

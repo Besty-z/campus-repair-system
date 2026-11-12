@@ -1,6 +1,7 @@
 // 我的（tabBar 页）：用户信息展示 + 按角色显示功能入口
 const { get } = require('../../utils/request');
 const util = require('../../utils/util');
+const role = require('../../utils/role');
 
 Page({
   data: {
@@ -9,7 +10,8 @@ Page({
     roleText: '',        // 角色中文
     roleColor: '',       // 角色颜色
     isVip: false,
-    isAdmin: false
+    isAdmin: false,
+    isWorker: false
   },
 
   onShow() {
@@ -21,7 +23,8 @@ Page({
         avatarText: '用',
         roleText: '',
         isVip: false,
-        isAdmin: false
+        isAdmin: false,
+        isWorker: false
       });
       return;
     }
@@ -48,8 +51,14 @@ Page({
       roleText: util.roleText(userInfo.role),
       roleColor: util.roleColor(userInfo.role),
       isVip: userInfo.role === 'VIP',
-      isAdmin: userInfo.role === 'ADMIN'
+      isAdmin: userInfo.role === 'ADMIN',
+      isWorker: userInfo.role === 'WORKER'
     });
+  },
+
+  /** 课程演示：点击角色徽章切换身份 */
+  onSwitchRole() {
+    role.switchRole();
   },
 
   /** 去登录 */
@@ -85,6 +94,25 @@ Page({
     wx.navigateTo({ url: '/pages/admin/user' });
   },
 
+  goAdminWorker() {
+    wx.navigateTo({ url: '/pages/admin/worker' });
+  },
+
+  /** 维修工：我的任务 */
+  goWorkerTasks() {
+    wx.navigateTo({ url: '/pages/worker/tasks' });
+  },
+
+  /** 维修工：抢单大厅 */
+  goWorkerPool() {
+    wx.navigateTo({ url: '/pages/worker/pool' });
+  },
+
+  /** 维修工：我的资料 */
+  goWorkerProfile() {
+    wx.navigateTo({ url: '/pages/worker/profile' });
+  },
+
   /** 退出登录 */
   logout() {
     wx.showModal({
@@ -98,7 +126,8 @@ Page({
             avatarText: '用',
             roleText: '',
             isVip: false,
-            isAdmin: false
+            isAdmin: false,
+            isWorker: false
           });
           wx.showToast({ title: '已退出', icon: 'success' });
         }

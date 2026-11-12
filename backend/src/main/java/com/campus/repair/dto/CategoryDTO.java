@@ -1,9 +1,11 @@
 package com.campus.repair.dto;
 
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+
+import java.math.BigDecimal;
 
 /**
  * 故障分类保存请求对象（新增与编辑共用；status 仅编辑时使用）。
@@ -17,10 +19,14 @@ public class CategoryDTO {
     @Size(max = 50, message = "分类名称长度不能超过50个字符")
     private String name;
 
-    /** 归属地点类型：DORM宿舍楼内 PUBLIC校园公共区域 */
-    @NotBlank(message = "地点类型不能为空")
-    @Pattern(regexp = "DORM|PUBLIC", message = "地点类型只能为DORM或PUBLIC")
-    private String locationType;
+    /** 基础服务价（元） */
+    @NotNull(message = "基础服务价不能为空")
+    @DecimalMin(value = "0", message = "基础服务价不能为负数")
+    private BigDecimal price;
+
+    /** 服务图片URL（可空） */
+    @Size(max = 255, message = "服务图片URL长度不能超过255个字符")
+    private String imageUrl;
 
     /** 排序号，越小越靠前 */
     @NotNull(message = "排序号不能为空")
@@ -54,21 +60,39 @@ public class CategoryDTO {
     }
 
     /**
-     * 获取归属地点类型。
+     * 获取基础服务价。
      *
-     * @return 地点类型
+     * @return 基础服务价（元）
      */
-    public String getLocationType() {
-        return locationType;
+    public BigDecimal getPrice() {
+        return price;
     }
 
     /**
-     * 设置归属地点类型。
+     * 设置基础服务价。
      *
-     * @param locationType 地点类型
+     * @param price 基础服务价（元）
      */
-    public void setLocationType(String locationType) {
-        this.locationType = locationType;
+    public void setPrice(BigDecimal price) {
+        this.price = price;
+    }
+
+    /**
+     * 获取服务图片URL。
+     *
+     * @return 服务图片URL
+     */
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    /**
+     * 设置服务图片URL。
+     *
+     * @param imageUrl 服务图片URL
+     */
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
     }
 
     /**

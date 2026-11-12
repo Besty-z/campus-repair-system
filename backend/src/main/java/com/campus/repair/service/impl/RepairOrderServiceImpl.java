@@ -11,11 +11,15 @@ import com.campus.repair.dto.OrderCreateDTO;
 import com.campus.repair.dto.OrderStatusDTO;
 import com.campus.repair.entity.FaultCategory;
 import com.campus.repair.entity.RepairOrder;
+import com.campus.repair.entity.RepairOrderCategory;
 import com.campus.repair.entity.RepairOrderImage;
+import com.campus.repair.entity.RepairWorker;
 import com.campus.repair.entity.SysUser;
 import com.campus.repair.mapper.FaultCategoryMapper;
+import com.campus.repair.mapper.RepairOrderCategoryMapper;
 import com.campus.repair.mapper.RepairOrderImageMapper;
 import com.campus.repair.mapper.RepairOrderMapper;
+import com.campus.repair.mapper.RepairWorkerMapper;
 import com.campus.repair.mapper.SysUserMapper;
 import com.campus.repair.service.RepairOrderService;
 import com.campus.repair.vo.OrderStatsVO;
@@ -26,6 +30,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -60,6 +66,9 @@ public class RepairOrderServiceImpl implements RepairOrderService {
     /** 工单号日期段格式 */
     private static final DateTimeFormatter ORDER_NO_DATE_FORMAT = DateTimeFormatter.ofPattern("yyyyMMdd");
 
+    /** 会员统一折扣：全部服务 8 折 */
+    private static final BigDecimal VIP_DISCOUNT_RATE = new BigDecimal("0.8");
+
     /** 报修工单 Mapper */
     private final RepairOrderMapper repairOrderMapper;
 
@@ -69,25 +78,37 @@ public class RepairOrderServiceImpl implements RepairOrderService {
     /** 故障分类 Mapper */
     private final FaultCategoryMapper faultCategoryMapper;
 
+    /** 工单-分类关联 Mapper（多选） */
+    private final RepairOrderCategoryMapper repairOrderCategoryMapper;
+
     /** 系统用户 Mapper */
     private final SysUserMapper sysUserMapper;
+
+    /** 维修工档案 Mapper（派单时校验维修工是否在职） */
+    private final RepairWorkerMapper repairWorkerMapper;
 
     /**
      * 构造报修工单服务。
      *
-     * @param repairOrderMapper      报修工单 Mapper
-     * @param repairOrderImageMapper 工单图片 Mapper
-     * @param faultCategoryMapper    故障分类 Mapper
-     * @param sysUserMapper          系统用户 Mapper
+     * @param repairOrderMapper           报修工单 Mapper
+     * @param repairOrderImageMapper      工单图片 Mapper
+     * @param faultCategoryMapper         故障分类 Mapper
+     * @param repairOrderCategoryMapper   工单-分类关联 Mapper
+     * @param sysUserMapper               系统用户 Mapper
+     * @param repairWorkerMapper          维修工档案 Mapper
      */
     public RepairOrderServiceImpl(RepairOrderMapper repairOrderMapper,
                                   RepairOrderImageMapper repairOrderImageMapper,
                                   FaultCategoryMapper faultCategoryMapper,
-                                  SysUserMapper sysUserMapper) {
+                                  RepairOrderCategoryMapper repairOrderCategoryMapper,
+                                  SysUserMapper sysUserMapper,
+                                  RepairWorkerMapper repairWorkerMapper) {
         this.repairOrderMapper = repairOrderMapper;
         this.repairOrderImageMapper = repairOrderImageMapper;
         this.faultCategoryMapper = faultCategoryMapper;
+        this.repairOrderCategoryMapper = repairOrderCategoryMapper;
         this.sysUserMapper = sysUserMapper;
+        this.repairWorkerMapper = repairWorkerMapper;
     }
 
     /**
@@ -137,17 +158,29 @@ public class RepairOrderServiceImpl implements RepairOrderService {
             throw new BizException(ResultCode.BAD_REQUEST, "公共区域报修必须填写具体位置");
         }
 
-        // 故障分类：选择“其他（自行填写）”时以自定义类型为准并忽略 categoryId；否则分类必须存在且启用
+        // 故障分类：可多选；选择“其他（自行填写）”时以自定义类型为准，且必须填写自定义内容
         String customCategory = StringUtils.hasText(dto.getCustomCategory()) ? dto.getCustomCategory().trim() : null;
-        FaultCategory category = null;
-        if (customCategory == null) {
-            if (dto.getCategoryId() == null) {
-                throw new BizException(ResultCode.BAD_REQUEST, "请选择故障分类，或选择“其他”并填写故障类型");
-            }
-            category = faultCategoryMapper.selectById(dto.getCategoryId());
-            if (category == null || !Integer.valueOf(Constants.STATUS_ENABLED).equals(category.getStatus())) {
+        List<Long> categoryIds = dto.getCategoryIds() == null
+                ? Collections.emptyList()
+                : dto.getCategoryIds().stream().filter(Objects::nonNull).distinct().collect(Collectors.toList());
+        if (customCategory == null && categoryIds.isEmpty()) {
+            throw new BizException(ResultCode.BAD_REQUEST, "请选择故障分类，或选择“其他”并填写故障类型");
+        }
+        List<FaultCategory> categories = Collections.emptyList();
+        if (customCategory != null) {
+            // “其他”与具体分类互斥，避免同一工单语义冲突
+            categoryIds = Collections.emptyList();
+        } else {
+            categories = faultCategoryMapper.selectBatchIds(categoryIds);
+            boolean invalid = categories.size() != categoryIds.size()
+                    || categories.stream().anyMatch(c -> !Integer.valueOf(Constants.STATUS_ENABLED).equals(c.getStatus()));
+            if (invalid) {
                 throw new BizException(ResultCode.BAD_REQUEST, "故障分类不存在或已停用");
             }
+            // 按排序号排序，保证返回的分类名称顺序稳定
+            categories.sort((a, b) -> Integer.compare(
+                    a.getSort() == null ? 0 : a.getSort(),
+                    b.getSort() == null ? 0 : b.getSort()));
         }
 
         LocalDateTime now = LocalDateTime.now();
@@ -157,8 +190,10 @@ public class RepairOrderServiceImpl implements RepairOrderService {
         order.setBuildingNo(dto.getBuildingNo());
         order.setRoomNo(dto.getRoomNo());
         order.setPublicLocation(dto.getPublicLocation());
-        order.setCategoryId(customCategory == null ? dto.getCategoryId() : null);
+        order.setCategoryId(categoryIds.isEmpty() ? null : categoryIds.get(0));
         order.setCustomCategory(customCategory);
+        // 预估费用：所选分类基础价求和，会员按 8 折；选择“其他”时面议（null）
+        order.setEstimatedPrice(calculateEstimatedPrice(categories, vip));
         order.setDescription(dto.getDescription());
         order.setUrgent(urgent == null ? 0 : urgent);
         order.setAppointmentTime(appointmentTime);
@@ -172,6 +207,11 @@ public class RepairOrderServiceImpl implements RepairOrderService {
             repairOrderMapper.insert(order);
         }
 
+        // 多选分类写入关联表
+        for (Long categoryId : categoryIds) {
+            repairOrderCategoryMapper.insert(new RepairOrderCategory(order.getId(), categoryId));
+        }
+
         int sort = 0;
         for (String url : images) {
             RepairOrderImage image = new RepairOrderImage();
@@ -182,7 +222,7 @@ public class RepairOrderServiceImpl implements RepairOrderService {
             repairOrderImageMapper.insert(image);
         }
         log.info("用户 {} 提交报修工单成功，工单号：{}", userId, order.getOrderNo());
-        return toVO(order, user, customCategory == null ? category.getName() : customCategory, images);
+        return toVO(order, user, categories, customCategory, images, null);
     }
 
     /**
@@ -257,6 +297,7 @@ public class RepairOrderServiceImpl implements RepairOrderService {
      * @param status       工单状态（可选）
      * @param locationType 地点类型（可选）
      * @param categoryId   故障分类ID（可选）
+     * @param workerId     维修工用户ID（可选）
      * @param keyword      关键字（可选，模糊匹配位置/描述/工单号/自定义故障类型）
      * @param pageNum      页码
      * @param pageSize     每页大小
@@ -264,13 +305,17 @@ public class RepairOrderServiceImpl implements RepairOrderService {
      */
     @Override
     public PageVO<OrderVO> adminPage(String status, String locationType, Long categoryId,
-                                     String keyword, int pageNum, int pageSize) {
+                                     Long workerId, String keyword, int pageNum, int pageSize) {
         requireAdmin();
         Page<RepairOrder> page = new Page<>(pageNum, pageSize);
         LambdaQueryWrapper<RepairOrder> wrapper = new LambdaQueryWrapper<RepairOrder>()
                 .eq(StringUtils.hasText(status), RepairOrder::getStatus, status)
                 .eq(StringUtils.hasText(locationType), RepairOrder::getLocationType, locationType)
-                .eq(categoryId != null, RepairOrder::getCategoryId, categoryId)
+                .eq(workerId != null, RepairOrder::getWorkerId, workerId)
+                // 多选分类筛选：命中关联表任一分类，或兼容历史单分类字段
+                .apply(categoryId != null,
+                        "(id IN (SELECT order_id FROM repair_order_category WHERE category_id = {0}) "
+                                + "OR category_id = {1})", categoryId, categoryId)
                 .and(StringUtils.hasText(keyword), w -> w
                         .like(RepairOrder::getDescription, keyword)
                         .or().like(RepairOrder::getOrderNo, keyword)
@@ -355,7 +400,176 @@ public class RepairOrderServiceImpl implements RepairOrderService {
     }
 
     /**
-     * 工单详情（USER/VIP 仅本人，ADMIN 任意）。
+     * 管理员派单：把工单指派给在职维修工，工单状态保持待接单。
+     *
+     * @param orderId  工单ID
+     * @param workerId 维修工用户ID
+     * @throws BizException 工单不存在、已是终态或维修工不可用的业务异常
+     */
+    @Override
+    public void assign(Long orderId, Long workerId) {
+        requireAdmin();
+        RepairOrder order = getOrderOrThrow(orderId);
+        if (Constants.ORDER_FINISHED.equals(order.getStatus())
+                || Constants.ORDER_REJECTED.equals(order.getStatus())) {
+            throw new BizException(ResultCode.BAD_REQUEST, "工单已是终态，不可派单");
+        }
+        RepairWorker worker = repairWorkerMapper.selectOne(new LambdaQueryWrapper<RepairWorker>()
+                .eq(RepairWorker::getUserId, workerId));
+        if (worker == null || !Integer.valueOf(Constants.STATUS_ENABLED).equals(worker.getStatus())) {
+            throw new BizException(ResultCode.BAD_REQUEST, "维修工不存在或已停用");
+        }
+        RepairOrder update = new RepairOrder();
+        update.setId(orderId);
+        update.setWorkerId(workerId);
+        update.setUpdateTime(LocalDateTime.now());
+        repairOrderMapper.updateById(update);
+        log.info("管理员 {} 将工单 {} 派给维修工 {}", UserContext.getUserId(), orderId, workerId);
+    }
+
+    /**
+     * 维修工任务分页（仅本人的工单，紧急优先，再按创建时间倒序）。
+     *
+     * @param workerId 维修工用户ID
+     * @param status   工单状态（可选）
+     * @param pageNum  页码
+     * @param pageSize 每页大小
+     * @return 分页结果
+     * @throws BizException 非维修工时抛出 403 业务异常
+     */
+    @Override
+    public PageVO<OrderVO> workerPage(Long workerId, String status, int pageNum, int pageSize) {
+        requireWorker();
+        Page<RepairOrder> page = new Page<>(pageNum, pageSize);
+        LambdaQueryWrapper<RepairOrder> wrapper = new LambdaQueryWrapper<RepairOrder>()
+                .eq(RepairOrder::getWorkerId, workerId)
+                .eq(StringUtils.hasText(status), RepairOrder::getStatus, status)
+                .orderByDesc(RepairOrder::getUrgent)
+                .orderByDesc(RepairOrder::getCreateTime);
+        Page<RepairOrder> result = repairOrderMapper.selectPage(page, wrapper);
+        return PageVO.of(result, buildVOList(result.getRecords()));
+    }
+
+    /**
+     * 维修工可抢单池分页（待接单且未派单，紧急优先）。
+     *
+     * @param pageNum  页码
+     * @param pageSize 每页大小
+     * @return 分页结果
+     * @throws BizException 非维修工时抛出 403 业务异常
+     */
+    @Override
+    public PageVO<OrderVO> workerPool(int pageNum, int pageSize) {
+        requireWorker();
+        Page<RepairOrder> page = new Page<>(pageNum, pageSize);
+        LambdaQueryWrapper<RepairOrder> wrapper = new LambdaQueryWrapper<RepairOrder>()
+                .eq(RepairOrder::getStatus, Constants.ORDER_PENDING)
+                .isNull(RepairOrder::getWorkerId)
+                .orderByDesc(RepairOrder::getUrgent)
+                .orderByDesc(RepairOrder::getCreateTime);
+        Page<RepairOrder> result = repairOrderMapper.selectPage(page, wrapper);
+        return PageVO.of(result, buildVOList(result.getRecords()));
+    }
+
+    /**
+     * 维修工抢单：仅待接单且未派单（或已派给自己）的工单可接，接单后进入维修中。
+     *
+     * @param orderId  工单ID
+     * @param workerId 维修工用户ID
+     * @throws BizException 工单不存在、已被他人接单或状态不可接单的业务异常
+     */
+    @Override
+    public void workerAccept(Long orderId, Long workerId) {
+        requireWorker();
+        RepairOrder order = getOrderOrThrow(orderId);
+        if (order.getWorkerId() != null && !order.getWorkerId().equals(workerId)) {
+            throw new BizException(ResultCode.BAD_REQUEST, "工单已被其他维修工接单");
+        }
+        if (!Constants.ORDER_PENDING.equals(order.getStatus())) {
+            throw new BizException(ResultCode.BAD_REQUEST, "当前工单状态不可接单");
+        }
+        LocalDateTime now = LocalDateTime.now();
+        RepairOrder update = new RepairOrder();
+        update.setId(orderId);
+        update.setWorkerId(workerId);
+        update.setStatus(Constants.ORDER_IN_PROGRESS);
+        update.setAcceptTime(now);
+        update.setUpdateTime(now);
+        repairOrderMapper.updateById(update);
+        log.info("维修工 {} 接单，工单ID：{}", workerId, orderId);
+    }
+
+    /**
+     * 维修工完成工单：仅本人维修中的工单可标记为已完成。
+     *
+     * @param orderId  工单ID
+     * @param workerId 维修工用户ID
+     * @param dto      目标状态与维修备注（仅允许 FINISHED）
+     * @throws BizException 非本人工单、状态不可完成或目标状态非法的业务异常
+     */
+    @Override
+    public void workerUpdateStatus(Long orderId, Long workerId, OrderStatusDTO dto) {
+        requireWorker();
+        RepairOrder order = getOrderOrThrow(orderId);
+        if (order.getWorkerId() == null || !order.getWorkerId().equals(workerId)) {
+            throw new BizException(ResultCode.FORBIDDEN, "无权限操作该工单");
+        }
+        if (!Constants.ORDER_IN_PROGRESS.equals(order.getStatus())) {
+            throw new BizException(ResultCode.BAD_REQUEST, "当前工单状态不可完成");
+        }
+        if (!Constants.ORDER_FINISHED.equals(dto.getStatus())) {
+            throw new BizException(ResultCode.BAD_REQUEST, "维修工只能将工单标记为已完成");
+        }
+        LocalDateTime now = LocalDateTime.now();
+        RepairOrder update = new RepairOrder();
+        update.setId(orderId);
+        update.setStatus(Constants.ORDER_FINISHED);
+        update.setFinishTime(now);
+        update.setUpdateTime(now);
+        if (StringUtils.hasText(dto.getAdminRemark())) {
+            update.setAdminRemark(dto.getAdminRemark());
+        }
+        repairOrderMapper.updateById(update);
+        log.info("维修工 {} 完成工单 {}", workerId, orderId);
+    }
+
+    /**
+     * 报修人评价已完成工单（每个工单仅可评价一次）。
+     *
+     * @param orderId 工单ID
+     * @param userId  当前登录用户ID
+     * @param score   评分（1-5星）
+     * @param comment 评价内容（可选）
+     * @throws BizException 评分非法、非本人工单、工单未完成或重复评价的业务异常
+     */
+    @Override
+    public void rate(Long orderId, Long userId, Integer score, String comment) {
+        if (score == null || score < 1 || score > 5) {
+            throw new BizException(ResultCode.BAD_REQUEST, "评分必须在1-5之间");
+        }
+        RepairOrder order = getOrderOrThrow(orderId);
+        if (!order.getUserId().equals(userId)) {
+            throw new BizException(ResultCode.FORBIDDEN, "无权限评价他人工单");
+        }
+        if (!Constants.ORDER_FINISHED.equals(order.getStatus())) {
+            throw new BizException(ResultCode.BAD_REQUEST, "工单未完成，暂不可评价");
+        }
+        if (order.getRatingScore() != null) {
+            throw new BizException(ResultCode.BAD_REQUEST, "该工单已评价");
+        }
+        RepairOrder update = new RepairOrder();
+        update.setId(orderId);
+        update.setRatingScore(score);
+        update.setRatingComment(StringUtils.hasText(comment) ? comment.trim() : null);
+        update.setRatingTime(LocalDateTime.now());
+        update.setUpdateTime(LocalDateTime.now());
+        repairOrderMapper.updateById(update);
+        log.info("用户 {} 评价工单 {}，评分：{}", userId, orderId, score);
+    }
+
+    /**
+     * 工单详情（USER/VIP 仅本人，ADMIN 任意；
+     * WORKER 可查看指派给自己的工单，或尚未派单的待接单工单）。
      *
      * @param id 工单ID
      * @return 工单详情
@@ -367,11 +581,38 @@ public class RepairOrderServiceImpl implements RepairOrderService {
         if (order == null) {
             throw new BizException(ResultCode.BAD_REQUEST, "工单不存在");
         }
-        if (!Constants.ROLE_ADMIN.equals(UserContext.getRole())
-                && !order.getUserId().equals(UserContext.getUserId())) {
+        String role = UserContext.getRole();
+        Long currentUserId = UserContext.getUserId();
+        boolean allowed = Constants.ROLE_ADMIN.equals(role)
+                || order.getUserId().equals(currentUserId)
+                || (Constants.ROLE_WORKER.equals(role)
+                        && (Objects.equals(currentUserId, order.getWorkerId())
+                        || (order.getWorkerId() == null && Constants.ORDER_PENDING.equals(order.getStatus()))));
+        if (!allowed) {
             throw new BizException(ResultCode.FORBIDDEN, "无权限查看他人工单");
         }
         return buildVOList(List.of(order)).get(0);
+    }
+
+    /**
+     * 计算工单预估费用：所选分类基础价求和，会员统一 8 折，保留 2 位小数四舍五入。
+     * 选择“其他（自行填写）”时无基础价，返回 null 表示面议。
+     *
+     * @param categories 已校验的故障分类列表（选择“其他”时为空）
+     * @param vip        是否会员用户
+     * @return 预估费用；无具体分类时为 null
+     */
+    private BigDecimal calculateEstimatedPrice(List<FaultCategory> categories, boolean vip) {
+        if (categories == null || categories.isEmpty()) {
+            return null;
+        }
+        BigDecimal total = categories.stream()
+                .map(category -> category.getPrice() == null ? BigDecimal.ZERO : category.getPrice())
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        if (vip) {
+            total = total.multiply(VIP_DISCOUNT_RATE);
+        }
+        return total.setScale(2, RoundingMode.HALF_UP);
     }
 
     /**
@@ -397,19 +638,37 @@ public class RepairOrderServiceImpl implements RepairOrderService {
         if (orders == null || orders.isEmpty()) {
             return Collections.emptyList();
         }
-        // 自定义故障类型工单的 categoryId 为 null，先过滤掉，避免 selectBatchIds 传入 null/空集合
-        Set<Long> categoryIds = orders.stream()
-                .map(RepairOrder::getCategoryId)
-                .filter(Objects::nonNull)
+        List<Long> orderIds = orders.stream().map(RepairOrder::getId).collect(Collectors.toList());
+        // 一次查出所有工单的多选分类关联，避免 N+1 查询
+        Map<Long, List<Long>> orderCategoryIdMap = repairOrderCategoryMapper.selectList(
+                        new LambdaQueryWrapper<RepairOrderCategory>()
+                                .in(RepairOrderCategory::getOrderId, orderIds))
+                .stream()
+                .collect(Collectors.groupingBy(RepairOrderCategory::getOrderId,
+                        Collectors.mapping(RepairOrderCategory::getCategoryId, Collectors.toList())));
+        // 兼容历史数据：未写入关联表时回退到单分类字段
+        for (RepairOrder order : orders) {
+            if (order.getCategoryId() != null && !orderCategoryIdMap.containsKey(order.getId())) {
+                orderCategoryIdMap.put(order.getId(), List.of(order.getCategoryId()));
+            }
+        }
+        Set<Long> categoryIds = orderCategoryIdMap.values().stream()
+                .flatMap(List::stream)
                 .collect(Collectors.toSet());
-        Map<Long, String> categoryNameMap = categoryIds.isEmpty()
+        Map<Long, FaultCategory> categoryMap = categoryIds.isEmpty()
                 ? Collections.emptyMap()
                 : faultCategoryMapper.selectBatchIds(categoryIds).stream()
-                        .collect(Collectors.toMap(FaultCategory::getId, FaultCategory::getName));
+                        .collect(Collectors.toMap(FaultCategory::getId, Function.identity()));
         Set<Long> userIds = orders.stream().map(RepairOrder::getUserId).collect(Collectors.toSet());
-        Map<Long, SysUser> userMap = sysUserMapper.selectBatchIds(userIds).stream()
+        // 维修工ID同样是 sys_user.id，合并一次批量查询即可拿到维修工姓名与手机号
+        Set<Long> workerIds = orders.stream()
+                .map(RepairOrder::getWorkerId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        Set<Long> allUserIds = new java.util.HashSet<>(userIds);
+        allUserIds.addAll(workerIds);
+        Map<Long, SysUser> userMap = sysUserMapper.selectBatchIds(allUserIds).stream()
                 .collect(Collectors.toMap(SysUser::getId, Function.identity()));
-        List<Long> orderIds = orders.stream().map(RepairOrder::getId).collect(Collectors.toList());
         Map<Long, List<String>> imageMap = repairOrderImageMapper.selectList(
                         new LambdaQueryWrapper<RepairOrderImage>()
                                 .in(RepairOrderImage::getOrderId, orderIds)
@@ -418,22 +677,36 @@ public class RepairOrderServiceImpl implements RepairOrderService {
                 .collect(Collectors.groupingBy(RepairOrderImage::getOrderId, LinkedHashMap::new,
                         Collectors.mapping(RepairOrderImage::getImageUrl, Collectors.toList())));
         return orders.stream()
-                .map(order -> toVO(order, userMap.get(order.getUserId()),
-                        categoryNameMap.get(order.getCategoryId()),
-                        imageMap.getOrDefault(order.getId(), Collections.emptyList())))
+                .map(order -> {
+                    List<FaultCategory> categories = orderCategoryIdMap
+                            .getOrDefault(order.getId(), Collections.emptyList())
+                            .stream()
+                            .map(categoryMap::get)
+                            .filter(Objects::nonNull)
+                            .sorted((a, b) -> Integer.compare(
+                                    a.getSort() == null ? 0 : a.getSort(),
+                                    b.getSort() == null ? 0 : b.getSort()))
+                            .collect(Collectors.toList());
+                    return toVO(order, userMap.get(order.getUserId()), categories,
+                            order.getCustomCategory(), imageMap.getOrDefault(order.getId(), Collections.emptyList()),
+                            userMap.get(order.getWorkerId()));
+                })
                 .collect(Collectors.toList());
     }
 
     /**
      * 单工单实体转换为返回对象。
      *
-     * @param order        工单实体
-     * @param user         报修人实体（可空）
-     * @param categoryName 分类名称（可空）
-     * @param images       图片相对路径列表
+     * @param order          工单实体
+     * @param user           报修人实体（可空）
+     * @param categories     分类实体列表（可空，多选按排序号升序）
+     * @param customCategory 自定义故障类型（选择“其他”时填写）
+     * @param images         图片相对路径列表
+     * @param worker         维修工用户实体（可空）
      * @return 工单返回对象
      */
-    private OrderVO toVO(RepairOrder order, SysUser user, String categoryName, List<String> images) {
+    private OrderVO toVO(RepairOrder order, SysUser user, List<FaultCategory> categories,
+                         String customCategory, List<String> images, SysUser worker) {
         OrderVO vo = new OrderVO();
         vo.setId(order.getId());
         vo.setOrderNo(order.getOrderNo());
@@ -446,15 +719,30 @@ public class RepairOrderServiceImpl implements RepairOrderService {
         vo.setBuildingNo(order.getBuildingNo());
         vo.setRoomNo(order.getRoomNo());
         vo.setPublicLocation(order.getPublicLocation());
+        List<Long> categoryIds = categories.stream().map(FaultCategory::getId).collect(Collectors.toList());
+        List<String> categoryNames = categories.stream().map(FaultCategory::getName).collect(Collectors.toList());
         vo.setCategoryId(order.getCategoryId());
-        // 自定义故障类型优先展示，未填写时回退到分类名称
-        vo.setCategoryName(StringUtils.hasText(order.getCustomCategory()) ? order.getCustomCategory() : categoryName);
+        vo.setCategoryIds(categoryIds);
+        vo.setCategoryNames(categoryNames);
+        // 自定义故障类型优先展示，未填写时用分类名称（多选以“、”拼接）
+        vo.setCategoryName(StringUtils.hasText(customCategory)
+                ? customCategory
+                : String.join("、", categoryNames));
         vo.setDescription(order.getDescription());
+        vo.setEstimatedPrice(order.getEstimatedPrice());
         vo.setImages(images);
         vo.setUrgent(order.getUrgent());
         vo.setAppointmentTime(order.getAppointmentTime());
         vo.setStatus(order.getStatus());
         vo.setAdminRemark(order.getAdminRemark());
+        vo.setWorkerId(order.getWorkerId());
+        if (worker != null) {
+            vo.setWorkerName(worker.getNickname());
+            vo.setWorkerPhone(worker.getPhone());
+        }
+        vo.setRatingScore(order.getRatingScore());
+        vo.setRatingComment(order.getRatingComment());
+        vo.setRatingTime(order.getRatingTime());
         vo.setCreateTime(order.getCreateTime());
         vo.setAcceptTime(order.getAcceptTime());
         vo.setFinishTime(order.getFinishTime());
@@ -484,6 +772,17 @@ public class RepairOrderServiceImpl implements RepairOrderService {
     private void requireAdmin() {
         if (!Constants.ROLE_ADMIN.equals(UserContext.getRole())) {
             throw new BizException(ResultCode.FORBIDDEN, "无权限访问，仅管理员可操作");
+        }
+    }
+
+    /**
+     * 校验当前登录用户是否为维修工。
+     *
+     * @throws BizException 非维修工时抛出 403 业务异常
+     */
+    private void requireWorker() {
+        if (!Constants.ROLE_WORKER.equals(UserContext.getRole())) {
+            throw new BizException(ResultCode.FORBIDDEN, "无权限访问，仅维修工可操作");
         }
     }
 }

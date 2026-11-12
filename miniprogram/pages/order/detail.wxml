@@ -45,11 +45,48 @@
     </view>
     <view class="info-row"><text class="info-label">地点类型</text><text class="info-value">{{order.locationTypeText}}</text></view>
     <view class="info-row"><text class="info-label">具体地点</text><text class="info-value">{{order.locationText}}</text></view>
-    <view class="info-row"><text class="info-label">故障分类</text><text class="info-value">{{order.categoryName}}</text></view>
+    <view class="info-row">
+      <text class="info-label">故障分类</text>
+      <view class="info-value cat-chip-list" wx:if="{{order.categoryNames && order.categoryNames.length > 0}}">
+        <text class="tag cat-chip" wx:for="{{order.categoryNames}}" wx:key="*this">{{item}}</text>
+      </view>
+      <text class="info-value" wx:else>{{order.categoryName}}</text>
+    </view>
+    <view class="info-row">
+      <text class="info-label">预估费用</text>
+      <text class="info-value price-text">{{order.estimatedText}}</text>
+    </view>
     <view class="info-row"><text class="info-label">故障描述</text><text class="info-value">{{order.description}}</text></view>
     <view class="info-row" wx:if="{{order.appointmentTime}}">
       <text class="info-label">预约时间</text><text class="info-value">{{order.appointmentTime}}</text>
     </view>
+  </view>
+
+  <!-- 维修人员信息 -->
+  <view class="card" wx:if="{{order.workerName || order.workerPhone}}">
+    <view class="section-head">
+      <text class="section-title">维修人员</text>
+    </view>
+    <view class="info-row" wx:if="{{order.workerName}}">
+      <text class="info-label">维修工</text><text class="info-value">{{order.workerName}}</text>
+    </view>
+    <view class="info-row" wx:if="{{order.workerPhone}}">
+      <text class="info-label">联系电话</text><text class="info-value">{{order.workerPhone}}</text>
+    </view>
+  </view>
+
+  <!-- 服务评价 -->
+  <view class="card rate-card" wx:if="{{order.ratingScore}}">
+    <view class="section-head">
+      <text class="section-title">服务评价</text>
+      <text class="section-tip" wx:if="{{order.ratingTime}}">{{order.ratingTime}}</text>
+    </view>
+    <view class="rate-score-line">
+      <text class="rate-score">{{order.ratingScore}}</text>
+      <text class="rate-unit">分</text>
+    </view>
+    <view class="rate-comment" wx:if="{{order.ratingComment}}">{{order.ratingComment}}</view>
+    <view class="rate-comment rate-empty" wx:else>未填写文字评价</view>
   </view>
 
   <!-- 故障图片九宫格 -->
@@ -72,6 +109,11 @@
     <view class="remark-text">{{order.adminRemark}}</view>
   </view>
 
+  <!-- 评价维修（报修人 + 已完成 + 未评价） -->
+  <view class="rate-action" wx:if="{{canRate}}">
+    <button class="btn-primary" bindtap="openRate">评价维修</button>
+  </view>
+
   <!-- 时间与报修人信息 -->
   <view class="card">
     <view class="section-head">
@@ -81,6 +123,28 @@
     <view class="info-row"><text class="info-label">提交时间</text><text class="info-value">{{order.createTime}}</text></view>
     <view class="info-row" wx:if="{{order.acceptTime}}"><text class="info-label">接单时间</text><text class="info-value">{{order.acceptTime}}</text></view>
     <view class="info-row" wx:if="{{order.finishTime}}"><text class="info-label">完成时间</text><text class="info-value">{{order.finishTime}}</text></view>
+  </view>
+
+  <!-- 评价弹窗 -->
+  <view class="modal-mask" wx:if="{{showRateModal}}" bindtap="hideRate">
+    <view class="modal-body" catchtap="noop">
+      <view class="modal-title">评价维修服务</view>
+      <view class="star-row">
+        <text class="star {{item <= formScore ? 'star-active' : ''}}"
+              wx:for="{{stars}}" wx:key="*this"
+              data-score="{{item}}" bindtap="onScoreTap">★</text>
+      </view>
+      <view class="star-tip">{{formScore}} 星</view>
+      <view class="form-item">
+        <text class="form-label">评价内容</text>
+        <textarea class="form-textarea" placeholder="说说本次维修体验（可选）"
+                  value="{{formComment}}" bindinput="onCommentInput" maxlength="200" />
+      </view>
+      <view class="modal-actions">
+        <button class="btn-default modal-btn" bindtap="hideRate">取消</button>
+        <button class="btn-primary modal-btn" disabled="{{submitting}}" bindtap="submitRating">提交评价</button>
+      </view>
+    </view>
   </view>
 </view>
 

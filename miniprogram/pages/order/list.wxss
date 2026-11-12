@@ -89,6 +89,22 @@
   white-space: nowrap;
 }
 
+/* 多选分类小标签 */
+.cat-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  white-space: normal;
+  overflow: visible;
+}
+
+.cat-chip {
+  margin-right: 10rpx;
+  margin-bottom: 4rpx;
+  color: var(--brand);
+  background: var(--brand-soft);
+}
+
 .order-no {
   margin-top: 8rpx;
   font-size: 22rpx;
@@ -133,6 +149,12 @@
   flex: 1;
   color: var(--text);
   word-break: break-all;
+}
+
+/* 预估费用：橙色强调，面议同样醒目 */
+.order-price {
+  font-weight: 600;
+  color: #ff6b00;
 }
 
 .order-foot {

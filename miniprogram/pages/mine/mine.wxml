@@ -8,10 +8,14 @@
     <view class="profile-main">
       <view class="nickname-row">
         <text class="nickname">{{userInfo.nickname || '校园用户'}}</text>
-        <text class="role-badge">{{roleText}}</text>
+        <!-- 课程演示：点击角色徽章切换身份 -->
+        <view class="role-switch" bindtap="onSwitchRole" hover-class="role-switch-hover">
+          <text class="role-badge">{{roleText}}</text>
+          <text class="role-switch-tip">切换身份 ›</text>
+        </view>
       </view>
       <view class="phone">{{userInfo.phone}}</view>
-      <view class="profile-tip">{{isAdmin ? '管理员账号 · 可处理全部工单' : (isVip ? '会员权益已生效' : '普通用户 · 可提交报修与查询进度')}}</view>
+      <view class="profile-tip">{{isAdmin ? '管理员账号 · 可处理全部工单' : (isWorker ? '维修工 · 抢单与任务处理' : (isVip ? '会员权益已生效' : '普通用户 · 可提交报修与查询进度'))}}</view>
     </view>
   </view>
 
@@ -26,8 +30,8 @@
     </view>
   </view>
 
-  <!-- 常用功能 -->
-  <view class="card menu-card">
+  <!-- 常用功能（普通用户 / 会员） -->
+  <view class="card menu-card" wx:if="{{!isWorker}}">
     <view class="section-head">
       <text class="section-title">常用功能</text>
     </view>
@@ -52,6 +56,37 @@
       <view class="menu-text">
         <view class="menu-name">报修统计</view>
         <view class="menu-desc">会员专属数据概览</view>
+      </view>
+      <text class="menu-arrow">›</text>
+    </view>
+  </view>
+
+  <!-- 维修工功能 -->
+  <view class="card menu-card" wx:if="{{isWorker}}">
+    <view class="section-head">
+      <text class="section-title">维修工功能</text>
+    </view>
+    <view class="menu-item" bindtap="goWorkerTasks">
+      <view class="menu-icon icon-blue">≡</view>
+      <view class="menu-text">
+        <view class="menu-name">我的任务</view>
+        <view class="menu-desc">接单、完成维修并填写备注</view>
+      </view>
+      <text class="menu-arrow">›</text>
+    </view>
+    <view class="menu-item" bindtap="goWorkerPool">
+      <view class="menu-icon icon-orange">＋</view>
+      <view class="menu-text">
+        <view class="menu-name">抢单大厅</view>
+        <view class="menu-desc">查看待接单工单，紧急优先</view>
+      </view>
+      <text class="menu-arrow">›</text>
+    </view>
+    <view class="menu-item" bindtap="goWorkerProfile">
+      <view class="menu-icon icon-green">○</view>
+      <view class="menu-text">
+        <view class="menu-name">我的资料</view>
+        <view class="menu-desc">维护简介与擅长分类</view>
       </view>
       <text class="menu-arrow">›</text>
     </view>
@@ -83,6 +118,14 @@
       <view class="menu-text">
         <view class="menu-name">用户管理</view>
         <view class="menu-desc">开通或取消会员身份</view>
+      </view>
+      <text class="menu-arrow">›</text>
+    </view>
+    <view class="menu-item" bindtap="goAdminWorker">
+      <view class="menu-icon icon-purple">◆</view>
+      <view class="menu-text">
+        <view class="menu-name">维修工管理</view>
+        <view class="menu-desc">新增维修工、分配擅长分类</view>
       </view>
       <text class="menu-arrow">›</text>
     </view>

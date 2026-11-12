@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { switchRole as switchRoleApi } from '../api/auth'
 
 // 用户状态管理：token 与 userInfo 持久化在 localStorage，刷新页面不丢失登录态
 export const useUserStore = defineStore('user', {
@@ -11,7 +12,7 @@ export const useUserStore = defineStore('user', {
   getters: {
     // 是否已登录
     isLoggedIn: (state) => !!state.token,
-    // 当前角色：USER / VIP / ADMIN
+    // 当前角色：USER / VIP / WORKER / ADMIN
     role: (state) => state.userInfo?.role || ''
   },
   actions: {
@@ -21,6 +22,12 @@ export const useUserStore = defineStore('user', {
       this.userInfo = userInfo
       localStorage.setItem('token', token)
       localStorage.setItem('userInfo', JSON.stringify(userInfo))
+    },
+    // 切换身份（课程演示）：后端更新角色并签发新 token，同步刷新本地登录态
+    async switchRole(role) {
+      const res = await switchRoleApi(role)
+      this.setLogin(res.data.token, res.data.user)
+      return res.data.user
     },
     // 退出登录：清空状态与本地缓存
     logout() {

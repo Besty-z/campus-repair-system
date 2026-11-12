@@ -56,6 +56,128 @@
   color: #a6b1c2;
 }
 
+/* 故障分类：多选标签，选中态用品牌渐变 */
+.cat-tags {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.cat-tag {
+  display: flex;
+  align-items: center;
+  padding: 14rpx 28rpx;
+  margin: 0 16rpx 16rpx 0;
+  border-radius: 999rpx;
+  background: #f6f8fd;
+  border: 2rpx solid #edf1f9;
+  font-size: 26rpx;
+  color: #5b6b7c;
+  transition: all 0.2s;
+}
+
+/* 分类单价：橙色强调 */
+.cat-price {
+  margin-left: 10rpx;
+  font-size: 22rpx;
+  font-weight: 700;
+  color: #ff6b00;
+}
+
+.cat-tag-active .cat-price {
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.cat-tag-active {
+  background: linear-gradient(135deg, #2c6bf2 0%, #17bfd4 100%);
+  border-color: transparent;
+  color: #ffffff;
+  font-weight: 600;
+  box-shadow: 0 8rpx 20rpx rgba(44, 107, 242, 0.24);
+}
+
+/* 费用预估 */
+.estimate-card {
+  background: linear-gradient(180deg, #fffdf9 0%, #ffffff 60%);
+  border: 2rpx solid #ffe8d6;
+}
+
+.estimate-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12rpx 0;
+  font-size: 25rpx;
+}
+
+.estimate-name {
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.estimate-price {
+  flex-shrink: 0;
+  margin-left: 20rpx;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.estimate-total {
+  margin-top: 6rpx;
+  padding-top: 18rpx;
+  border-top: 2rpx dashed #f3e2d2;
+}
+
+.estimate-total .estimate-price {
+  font-size: 30rpx;
+  color: #ff6b00;
+}
+
+.estimate-discount .estimate-name,
+.estimate-discount .estimate-price {
+  color: #b98d51;
+}
+
+.estimate-final {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-top: 16rpx;
+  padding-top: 20rpx;
+  border-top: 2rpx solid #f7ece2;
+}
+
+.final-label {
+  font-size: 27rpx;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.final-price {
+  font-size: 44rpx;
+  font-weight: 700;
+  color: #ff6b00;
+  line-height: 1.1;
+}
+
+.estimate-tip {
+  margin-top: 12rpx;
+  font-size: 21rpx;
+  line-height: 1.6;
+  color: #a6b1c2;
+}
+
+.estimate-tip-member {
+  color: #b98d51;
+}
+
+.estimate-empty {
+  padding: 16rpx 0;
+  font-size: 24rpx;
+  color: var(--muted);
+}
+
 /* 故障描述 */
 .desc-item {
   margin-bottom: 0;

@@ -57,23 +57,46 @@
           <p>{{ currentDesc }}</p>
         </div>
         <div class="topbar-right">
-          <span class="role-chip" :class="`role-${userStore.role.toLowerCase()}`">
-            {{ roleLabel }}
-          </span>
+          <!-- 角色胶囊：点击展开身份切换下拉（课程演示功能） -->
+          <el-dropdown trigger="click" :disabled="switchingRole" @command="handleSwitchRole">
+            <span
+              class="role-chip"
+              :class="[`role-${userStore.role.toLowerCase()}`, { 'is-switching': switchingRole }]"
+            >
+              {{ roleLabel }}
+              <el-icon class="role-caret"><ArrowDown /></el-icon>
+            </span>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item
+                  v-for="item in roleOptions"
+                  :key="item.value"
+                  :command="item.value"
+                >
+                  <span class="role-option">
+                    <span>{{ item.label }}</span>
+                    <el-icon v-if="item.value === userStore.role" class="role-check">
+                      <Check />
+                    </el-icon>
+                  </span>
+                </el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
           <span class="topbar-avatar">{{ avatarText }}</span>
         </div>
       </header>
 
-      <!-- 路由内容 -->
+      <!-- 路由内容：以角色为 key，切换身份后强制重挂载页面以刷新数据 -->
       <main class="main-content">
-        <router-view />
+        <router-view :key="userStore.role" />
       </main>
     </section>
   </div>
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessageBox, ElMessage } from 'element-plus'
 import {
@@ -84,7 +107,10 @@ import {
   List,
   Menu,
   User,
-  SwitchButton
+  Tools,
+  SwitchButton,
+  ArrowDown,
+  Check
 } from '@element-plus/icons-vue'
 import { useUserStore } from '../../store/user'
 import { ROLE_MAP } from '../../utils/dict'
@@ -92,6 +118,15 @@ import { ROLE_MAP } from '../../utils/dict'
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
+
+// 身份切换中标记：防止重复点击
+const switchingRole = ref(false)
+
+// 可切换的角色列表（与角色字典保持一致）
+const roleOptions = Object.keys(ROLE_MAP).map((value) => ({
+  value,
+  label: ROLE_MAP[value].label
+}))
 
 // 当前角色中文名（来自公共字典）
 const roleLabel = computed(() => ROLE_MAP[userStore.role]?.label ?? userStore.role)
@@ -121,9 +156,19 @@ const allGroups = [
     ]
   },
   {
+    label: '维修工作',
+    items: [
+      { path: '/', title: '工作台', icon: HomeFilled, roles: ['WORKER'] },
+      { path: '/worker/tasks', title: '我的任务', icon: Tickets, roles: ['WORKER'] },
+      { path: '/worker/pool', title: '抢单大厅', icon: List, roles: ['WORKER'] },
+      { path: '/worker/profile', title: '我的资料', icon: User, roles: ['WORKER'] }
+    ]
+  },
+  {
     label: '维修管理',
     items: [
       { path: '/admin/orders', title: '工单管理', icon: List, roles: ['ADMIN'] },
+      { path: '/admin/workers', title: '维修工管理', icon: Tools, roles: ['ADMIN'] },
       { path: '/admin/categories', title: '故障分类', icon: Menu, roles: ['ADMIN'] },
       { path: '/admin/users', title: '用户管理', icon: User, roles: ['ADMIN'] }
     ]
@@ -153,8 +198,12 @@ const currentDesc = computed(() => {
     '/repair/my': '查看自己的报修记录与维修进度',
     '/stats': '会员专属：历史报修数据统计',
     '/admin/orders': '全部工单，紧急工单优先展示',
+    '/admin/workers': '维护维修工账号、擅长分类与在职状态',
     '/admin/categories': '维护故障分类，报修时下拉读取',
-    '/admin/users': '查看注册用户，开通或取消会员身份'
+    '/admin/users': '查看注册用户，开通或取消会员身份',
+    '/worker/tasks': '查看分派给我的维修任务，接单并完成维修',
+    '/worker/pool': '抢单大厅：待接单且未指派的工单，紧急优先',
+    '/worker/profile': '维护个人简介与擅长分类，查看维修统计'
   }
   return descMap[route.path] || ''
 })
@@ -165,6 +214,31 @@ async function handleLogout() {
   userStore.logout()
   ElMessage.success('已退出登录')
   router.push('/login')
+}
+
+// 切换身份（课程演示）：确认后更新角色，成功后回到工作台刷新菜单与数据
+async function handleSwitchRole(role) {
+  if (!role || role === userStore.role || switchingRole.value) return
+  try {
+    await ElMessageBox.confirm(
+      '课程演示功能：切换身份会立即改变菜单与数据权限',
+      '切换身份',
+      { type: 'warning', confirmButtonText: '确认切换', cancelButtonText: '取消' }
+    )
+  } catch {
+    return // 用户取消切换
+  }
+
+  switchingRole.value = true
+  try {
+    await userStore.switchRole(role)
+    ElMessage.success(`已切换为${ROLE_MAP[role]?.label ?? role}`)
+    router.replace('/')
+  } catch {
+    // 失败提示已由请求拦截器统一展示后端 message
+  } finally {
+    switchingRole.value = false
+  }
 }
 </script>
 
@@ -426,19 +500,62 @@ async function handleLogout() {
   gap: 12px;
 }
 
-/* 角色胶囊标签 */
+/* 角色胶囊标签：点击展开身份切换 */
 .role-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
   padding: 5px 12px;
   border-radius: 999px;
   font-size: 12px;
   font-weight: 600;
   color: #2c6bf2;
   background: #eef3ff;
+  cursor: pointer;
+  user-select: none;
+  transition: opacity 0.2s ease, box-shadow 0.2s ease;
+}
+
+.role-chip:hover {
+  box-shadow: 0 0 0 2px rgba(44, 107, 242, 0.16);
+}
+
+.role-chip:focus-visible {
+  outline: none;
+}
+
+/* 切换请求进行中：弱化并禁用点击反馈 */
+.role-chip.is-switching {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.role-caret {
+  font-size: 12px;
+}
+
+/* 下拉菜单项（弹出层挂载在 body，需全局选择器） */
+:global(.role-option) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  min-width: 104px;
+}
+
+:global(.role-check) {
+  color: #2c6bf2;
+  font-size: 14px;
 }
 
 .role-chip.role-vip {
   color: #a76a05;
   background: #fff5e3;
+}
+
+.role-chip.role-worker {
+  color: #0a7f5e;
+  background: #e7f8f2;
 }
 
 .role-chip.role-admin {

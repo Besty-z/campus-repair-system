@@ -45,4 +45,14 @@ public interface AuthService {
      * @return 用户信息
      */
     UserVO profile(Long userId);
+
+    /**
+     * 课程演示用身份切换：同一账号在 USER / VIP / WORKER / ADMIN 之间切换，
+     * 切换结果写入数据库并签发新的登录令牌。切到 WORKER 时自动补建维修工档案。
+     *
+     * @param userId 当前登录用户ID
+     * @param role   目标角色
+     * @return 新的登录令牌与用户信息
+     */
+    LoginVO switchRole(Long userId, String role);
 }

@@ -1,10 +1,11 @@
 // ===================== 公共字典工具 =====================
 // 统一维护 角色 / 工单状态 / 地点类型 的中文映射与 Element Plus tag 颜色
 
-// 角色字典：USER 普通用户 / VIP 会员 / ADMIN 维修管理员
+// 角色字典：USER 普通用户 / VIP 会员 / WORKER 维修工 / ADMIN 维修管理员
 export const ROLE_MAP = {
   USER: { label: '普通用户', tagType: 'info' },
   VIP: { label: '会员', tagType: 'warning' },
+  WORKER: { label: '维修工', tagType: 'primary' },
   ADMIN: { label: '维修管理员', tagType: 'danger' }
 }
 

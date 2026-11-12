@@ -1,4 +1,6 @@
 {
+  "description": "校园报修预约系统 - 仓库根目录配置（小程序源码在 miniprogram 子目录）",
+  "miniprogramRoot": "miniprogram/",
   "setting": {
     "es6": true,
     "postcss": true,

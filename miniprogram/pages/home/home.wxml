@@ -1,4 +1,4 @@
-<!-- 首页：品牌头部 + 轮播 + 快捷入口 + 报修流程 + 最近工单 + 会员权益 -->
+<!-- 首页：品牌头部 + 广告位 + 服务保障 + 服务分类 + 快捷入口 + 报修流程 + 最近工单 + 会员权益 -->
 <view class="home-page">
   <!-- 顶部渐变区 -->
   <view class="hero">
@@ -10,9 +10,27 @@
         <view class="hero-greeting">{{greeting}}，{{userInfo ? (userInfo.nickname || '同学') : '同学'}}</view>
         <view class="hero-sub">校园报修 · 一键提交 · 进度可查</view>
       </view>
-      <view class="hero-role" wx:if="{{userInfo}}">{{roleText}}</view>
+      <!-- 课程演示：点击角色徽章切换身份 -->
+      <view class="hero-role" wx:if="{{userInfo}}" bindtap="onSwitchRole" hover-class="hero-role-hover">{{roleText}} · 切换</view>
       <view class="hero-login" wx:else bindtap="goLogin">登录</view>
     </view>
+
+    <!-- 广告轮播：大图 + 标题/副标题遮罩 + 按钮，接口失败时隐藏 -->
+    <swiper class="ad-swiper" wx:if="{{ads.length > 0}}" indicator-dots circular autoplay
+            interval="5000" duration="400"
+            indicator-color="rgba(255,255,255,0.4)" indicator-active-color="#ffffff">
+      <swiper-item wx:for="{{ads}}" wx:key="id">
+        <view class="ad-item" bindtap="goSubmit">
+          <image class="ad-img" src="{{item.imageUrl}}" mode="aspectFill" />
+          <view class="ad-mask"></view>
+          <view class="ad-info">
+            <view class="ad-title">{{item.title}}</view>
+            <view class="ad-subtitle" wx:if="{{item.subtitle}}">{{item.subtitle}}</view>
+            <view class="ad-btn">立即报修 ›</view>
+          </view>
+        </view>
+      </swiper-item>
+    </swiper>
 
     <swiper class="banner" indicator-dots autoplay circular interval="4000" duration="400"
             indicator-color="rgba(255,255,255,0.45)" indicator-active-color="#ffffff">
@@ -30,15 +48,30 @@
 
   <!-- 快捷入口 -->
   <view class="quick-card card">
-    <view class="quick-item" bindtap="goSubmit">
+    <view class="quick-item" wx:if="{{!isWorker}}" bindtap="goSubmit">
       <view class="quick-icon quick-icon-blue">+</view>
       <view class="quick-name">我要报修</view>
       <view class="quick-desc">提交故障信息</view>
     </view>
-    <view class="quick-item" bindtap="goOrders">
+    <view class="quick-item" wx:if="{{!isWorker}}" bindtap="goOrders">
       <view class="quick-icon quick-icon-orange">≡</view>
       <view class="quick-name">我的工单</view>
       <view class="quick-desc">查看维修进度</view>
+    </view>
+    <view class="quick-item" wx:if="{{isWorker}}" bindtap="goWorkerTasks">
+      <view class="quick-icon quick-icon-blue">≡</view>
+      <view class="quick-name">我的任务</view>
+      <view class="quick-desc">接单与完成维修</view>
+    </view>
+    <view class="quick-item" wx:if="{{isWorker}}" bindtap="goWorkerPool">
+      <view class="quick-icon quick-icon-orange">＋</view>
+      <view class="quick-name">抢单大厅</view>
+      <view class="quick-desc">待接单工单</view>
+    </view>
+    <view class="quick-item" wx:if="{{isWorker}}" bindtap="goWorkerProfile">
+      <view class="quick-icon quick-icon-green">○</view>
+      <view class="quick-name">我的资料</view>
+      <view class="quick-desc">简介与擅长分类</view>
     </view>
     <view class="quick-item" wx:if="{{isVip}}" bindtap="goStats">
       <view class="quick-icon quick-icon-gold">◎</view>
@@ -49,6 +82,39 @@
       <view class="quick-icon quick-icon-green">⚙</view>
       <view class="quick-name">管理后台</view>
       <view class="quick-desc">工单与用户管理</view>
+    </view>
+  </view>
+
+  <!-- 服务保障条（静态四项） -->
+  <view class="card guarantee-card">
+    <view class="guarantee-item" wx:for="{{guarantees}}" wx:key="label">
+      <view class="guarantee-value">{{item.value}}</view>
+      <view class="guarantee-label">{{item.label}}</view>
+    </view>
+  </view>
+
+  <!-- 服务分类九宫格：图片 + 名称 + 单价 + 会员价 + 8 折角标 -->
+  <view class="service-section" wx:if="{{services.length > 0}}">
+    <view class="section-head service-head">
+      <text class="section-title">上门维修服务</text>
+      <text class="section-tip">选择服务 · 快速报修</text>
+    </view>
+    <view class="service-grid">
+      <view class="service-card" wx:for="{{services}}" wx:key="id"
+            data-id="{{item.id}}" bindtap="goService" hover-class="service-card-hover">
+        <view class="service-thumb">
+          <image wx:if="{{item.imageUrl}}" class="service-img" src="{{item.imageUrl}}" mode="aspectFill" />
+          <view wx:else class="service-img service-img-fallback">{{item.initial}}</view>
+          <view class="service-off" wx:if="{{item.hasPrice}}">8折</view>
+        </view>
+        <view class="service-name">{{item.name}}</view>
+        <view class="service-price-row" wx:if="{{item.hasPrice}}">
+          <text class="service-price">¥{{item.priceText}}</text>
+          <text class="service-price-unit">起</text>
+        </view>
+        <view class="service-member" wx:if="{{item.hasPrice}}">会员 ¥{{item.memberPriceText}}</view>
+        <view class="service-member service-member-muted" wx:else>价格面议</view>
+      </view>
     </view>
   </view>
 
@@ -88,14 +154,15 @@
   <!-- 最近工单 -->
   <view class="card" wx:if="{{userInfo}}">
     <view class="section-head">
-      <text class="section-title">最近工单</text>
-      <text class="section-more" bindtap="goOrders">全部 ›</text>
+      <text class="section-title">{{isWorker ? '最近任务' : '最近工单'}}</text>
+      <text class="section-more" wx:if="{{isWorker}}" bindtap="goWorkerTasks">全部 ›</text>
+      <text class="section-more" wx:else bindtap="goOrders">全部 ›</text>
     </view>
     <view wx:for="{{recentOrders}}" wx:key="id" class="recent-item"
           data-id="{{item.id}}" bindtap="goDetail">
       <view class="recent-mark" style="background: {{item.statusColor}};"></view>
       <view class="recent-main">
-        <view class="recent-title">{{item.categoryName || '其他故障'}}</view>
+        <view class="recent-title">{{item.catTitle}}</view>
         <view class="recent-loc">{{item.locationText}}</view>
       </view>
       <view class="recent-right">
@@ -104,7 +171,7 @@
       </view>
     </view>
     <view class="empty-small" wx:if="{{!loading && recentOrders.length === 0}}">
-      暂无工单，点击「我要报修」开始
+      {{isWorker ? '暂无任务，点击「抢单大厅」接取工单' : '暂无工单，点击「我要报修」开始'}}
     </view>
   </view>
 

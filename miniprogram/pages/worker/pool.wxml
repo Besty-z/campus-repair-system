@@ -1,0 +1,53 @@
+<!-- 维修工：抢单大厅 -->
+<view class="pool-page">
+  <!-- 抢单提示 -->
+  <view class="pool-tip">
+    <view class="tip-dot"></view>
+    <text>待接单且未指派工单 · 紧急工单优先展示</text>
+  </view>
+
+  <!-- 工单卡片 -->
+  <view class="card pool-card {{item.urgent === 1 ? 'pool-urgent' : ''}}"
+        wx:for="{{list}}" wx:key="id">
+    <view class="pool-head" data-id="{{item.id}}" bindtap="goDetail">
+      <view class="pool-mark"></view>
+      <view class="pool-title-wrap">
+        <view class="pool-title">
+          <text class="tag cat-chip" wx:for="{{item.catNames}}" wx:for-item="catName" wx:key="*this">{{catName}}</text>
+        </view>
+        <view class="pool-no">工单号 {{item.orderNo}}</view>
+      </view>
+      <view class="head-right">
+        <text class="urgent-tag" wx:if="{{item.urgent === 1}}">紧急</text>
+      </view>
+    </view>
+
+    <view data-id="{{item.id}}" bindtap="goDetail">
+      <view class="pool-row">
+        <text class="row-label">报修地点</text>
+        <text class="row-value">{{item.locationText}}</text>
+      </view>
+      <view class="pool-row">
+        <text class="row-label">报修人</text>
+        <text class="row-value">{{item.userNickname}}（{{item.userPhone}}）</text>
+      </view>
+      <view class="pool-row" wx:if="{{item.descSummary}}">
+        <text class="row-label">故障描述</text>
+        <text class="row-value">{{item.descSummary}}</text>
+      </view>
+    </view>
+
+    <view class="pool-foot">
+      <text class="pool-time">{{item.createTime}}</text>
+      <button class="grab-btn" size="mini" data-id="{{item.id}}" catchtap="grabOrder">抢单</button>
+    </view>
+  </view>
+
+  <!-- 空状态 / 加载提示 -->
+  <view class="empty-state" wx:if="{{list.length === 0 && !loading}}">
+    <view class="empty-icon">◎</view>
+    <view class="empty-text">暂无待接单工单，稍后再来看看</view>
+  </view>
+  <view class="loading-text" wx:if="{{loading}}">加载中…</view>
+  <view class="loading-text" wx:elif="{{list.length > 0 && !hasMore}}">没有更多了</view>
+</view>

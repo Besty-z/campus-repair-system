@@ -59,17 +59,17 @@ Content-Type: `multipart/form-data`，字段名 `file`
 ## 3. 故障分类 `/categories`
 
 ### GET `/categories` 查询分类列表（需 token，所有角色可用）
-参数：`locationType`（可选，DORM/PUBLIC）
-响应 data：`[ { "id": 1, "name": "水电故障", "locationType": "DORM", "sort": 1 } ]`（仅返回启用状态，按 sort 升序）
+参数：无（分类按维修工种划分，不再区分报修地点）
+响应 data：`[ { "id": 1, "name": "水电类", "sort": 1 } ]`（仅返回启用状态，按 sort 升序）
 
 ### GET `/categories/admin/all` 全量分类含停用（仅 ADMIN）
-响应 data：`[ { "id": 1, "name": "...", "locationType": "DORM", "sort": 1, "status": 1 } ]`
+响应 data：`[ { "id": 1, "name": "...", "sort": 1, "status": 1 } ]`
 
 ### POST `/categories` 新增分类（仅 ADMIN）
-请求：`{ "name": "网络故障", "locationType": "DORM", "sort": 7 }`
+请求：`{ "name": "网络弱电", "sort": 7 }`
 
 ### PUT `/categories/{id}` 修改分类（仅 ADMIN）
-请求：`{ "name": "网络与宽带", "locationType": "DORM", "sort": 7, "status": 1 }`
+请求：`{ "name": "网络与宽带", "sort": 7, "status": 1 }`
 
 ### DELETE `/categories/{id}` 删除分类（仅 ADMIN）
 > 若分类下已存在工单，执行逻辑删除（status=0）；否则物理删除。响应 message 说明实际行为。
@@ -84,7 +84,7 @@ Content-Type: `multipart/form-data`，字段名 `file`
   "buildingNo": "5号楼",
   "roomNo": "302",
   "publicLocation": null,
-  "categoryId": 1,
+  "categoryIds": [1, 4],
   "customCategory": null,
   "description": "宿舍水龙头漏水",
   "images": ["/uploads/2026/11/08/a.jpg"],
@@ -94,7 +94,8 @@ Content-Type: `multipart/form-data`，字段名 `file`
 ```
 规则：
 - `locationType=DORM` 时 `buildingNo`、`roomNo` 必填；`PUBLIC` 时 `publicLocation` 必填
-- `categoryId` 可为空；选择「其他（自行填写）」时传 `customCategory`（≤50字），此时 `categoryId` 传 null，工单不再关联具体分类
+- `categoryIds` 为故障分类ID数组，支持多选（可传 1~N 个，自动去重并校验分类存在且启用）
+- 选择「其他（自行填写）」时 `categoryIds` 传空数组 `[]`，并必须传 `customCategory`（≤50字）；两者互斥
 - USER：`images` 最多 1 张；`urgent` 强制 0；`appointmentTime` 强制 null
 - VIP：`images` 最多 5 张；`appointmentTime` 格式 `yyyy-MM-dd HH:mm:ss`，必须是将来的时间；`urgent` 可为 1
 - 响应 data：创建成功的工单对象（同 GET 详情结构）
@@ -108,7 +109,7 @@ Content-Type: `multipart/form-data`，字段名 `file`
 ```json
 {
   "total": 12, "pending": 2, "inProgress": 1, "finished": 8, "rejected": 1,
-  "byCategory": [ { "categoryName": "水电故障", "count": 4 } ],
+  "byCategory": [ { "categoryName": "水电类", "count": 4 } ],
   "byMonth": [ { "month": "2026-10", "count": 5 } ]
 }
 ```
@@ -131,7 +132,8 @@ PENDING → IN_PROGRESS，记录接单人与接单时间
   "id": 1, "orderNo": "R202611080001",
   "userId": 2, "userPhone": "13912345678", "userNickname": "张三",
   "locationType": "DORM", "buildingNo": "5号楼", "roomNo": "302", "publicLocation": null,
-  "categoryId": 1, "categoryName": "水电故障",
+  "categoryId": 1, "categoryName": "水电类、空调电器",
+  "categoryIds": [1, 4], "categoryNames": ["水电类", "空调电器"],
   "description": "宿舍水龙头漏水",
   "images": ["/uploads/2026/11/08/a.jpg"],
   "urgent": 0, "appointmentTime": null,
@@ -148,6 +150,32 @@ PENDING → IN_PROGRESS，记录接单人与接单时间
 
 ### PUT `/admin/users/{id}/role` 设置用户身份
 请求：`{ "role": "VIP" }`（可选值 USER / VIP；管理员角色不允许通过此接口变更）
+
+## 5.1 维修工 `/workers`
+
+### 管理端（仅 ADMIN）
+- GET `/workers/admin/page?keyword=&pageNum=&pageSize=` 维修工分页
+- POST `/workers/admin` 新增维修工，请求 `{ "phone": "13700000001", "name": "张师傅", "intro": "...", "categoryIds": [13, 16] }`
+  （手机号已注册的普通用户会被升级为 WORKER，管理员账号不可升级）
+- PUT `/workers/admin/{id}` 编辑档案，请求 `{ "name": "...", "intro": "...", "categoryIds": [13], "status": 1 }`
+- GET `/workers/admin/enabled` 在职维修工列表（派单下拉）
+
+### 维修工本人（仅 WORKER）
+- GET `/workers/me` 我的档案与统计
+- PUT `/workers/me` 修改简介与擅长分类，请求 `{ "intro": "...", "categoryIds": [13] }`
+
+WorkerVO：`{ id, userId, name, phone, intro, status, categoryIds, categoryNames, completedCount, avgRating, ratingCount, createTime }`
+
+## 5.2 维修工工单与评价
+
+- PUT `/orders/admin/{id}/assign` 管理员派单，请求 `{ "workerId": 5 }`
+- GET `/orders/worker/page?status=&pageNum=&pageSize=` 我的任务（WORKER）
+- GET `/orders/worker/pool?pageNum=&pageSize=` 抢单大厅：待接单且未指派（WORKER）
+- PUT `/orders/worker/{id}/accept` 接单/抢单（WORKER）
+- PUT `/orders/worker/{id}/status` 完成维修，请求 `{ "status": "FINISHED", "adminRemark": "已更换水龙头" }`（WORKER，仅本人任务）
+- POST `/orders/{id}/rating` 报修人评价，请求 `{ "score": 5, "comment": "很及时" }`（仅本人工单、已完成且未评价）
+
+OrderVO 新增：`workerId, workerName, workerPhone, ratingScore, ratingComment, ratingTime`。
 
 ## 分页对象结构（MyBatis-Plus 风格）
 

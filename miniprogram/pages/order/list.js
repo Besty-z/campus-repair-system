@@ -87,7 +87,9 @@ Page({
       statusText: util.statusText(order.status),
       statusColor: util.statusColor(order.status),
       locationText: locationText.trim(),
-      descSummary: util.summary(order.description, 40)
+      descSummary: util.summary(order.description, 40),
+      // 预估费用：null 表示面议
+      estimatedText: order.estimatedPrice == null ? '面议' : '¥' + util.formatMoney(order.estimatedPrice)
     });
   },
 

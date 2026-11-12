@@ -6,7 +6,6 @@ import jakarta.validation.constraints.Size;
 
 import java.time.LocalDateTime;
 import java.util.List;
-
 /**
  * 提交报修工单请求对象。
  * 角色差异（图片数量、紧急标记、预约时间）在业务层按角色强制校验。
@@ -32,10 +31,10 @@ public class OrderCreateDTO {
     @Size(max = 200, message = "公共区域位置长度不能超过200个字符")
     private String publicLocation;
 
-    /** 故障分类ID（可为空：选择“其他”时传 customCategory） */
-    private Long categoryId;
+    /** 故障分类ID列表（可多选；选择“其他”时为空，改传 customCategory） */
+    private List<Long> categoryIds;
 
-    /** 自定义故障类型（用户选择“其他”时填写，最多50字） */
+    /** 自定义故障类型（用户选择“其他”时必填，最多50字） */
     @Size(max = 50, message = "自定义故障类型长度不能超过50个字符")
     private String customCategory;
 
@@ -132,21 +131,21 @@ public class OrderCreateDTO {
     }
 
     /**
-     * 获取故障分类ID。
+     * 获取故障分类ID列表。
      *
-     * @return 故障分类ID
+     * @return 故障分类ID列表
      */
-    public Long getCategoryId() {
-        return categoryId;
+    public List<Long> getCategoryIds() {
+        return categoryIds;
     }
 
     /**
-     * 设置故障分类ID。
+     * 设置故障分类ID列表。
      *
-     * @param categoryId 故障分类ID
+     * @param categoryIds 故障分类ID列表（可多选）
      */
-    public void setCategoryId(Long categoryId) {
-        this.categoryId = categoryId;
+    public void setCategoryIds(List<Long> categoryIds) {
+        this.categoryIds = categoryIds;
     }
 
     /**

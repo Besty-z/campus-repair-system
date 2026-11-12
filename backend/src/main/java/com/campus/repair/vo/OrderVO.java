@@ -1,6 +1,7 @@
 package com.campus.repair.vo;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -39,14 +40,23 @@ public class OrderVO implements Serializable {
     /** 公共区域具体位置 */
     private String publicLocation;
 
-    /** 故障分类ID */
+    /** 故障分类ID（多选中的第一个，兼容旧字段） */
     private Long categoryId;
 
-    /** 故障分类名称 */
+    /** 故障分类名称（多选时以“、”拼接，便于列表直接展示） */
     private String categoryName;
+
+    /** 故障分类ID列表（多选） */
+    private List<Long> categoryIds;
+
+    /** 故障分类名称列表（多选） */
+    private List<String> categoryNames;
 
     /** 故障文字描述 */
     private String description;
+
+    /** 预估费用（元，会员已按8折计算；选择“其他”时为 null 表示面议） */
+    private BigDecimal estimatedPrice;
 
     /** 故障图片相对路径列表 */
     private List<String> images;
@@ -62,6 +72,24 @@ public class OrderVO implements Serializable {
 
     /** 维修备注 */
     private String adminRemark;
+
+    /** 维修工用户ID */
+    private Long workerId;
+
+    /** 维修工姓名 */
+    private String workerName;
+
+    /** 维修工手机号 */
+    private String workerPhone;
+
+    /** 评分（1-5星，未评价时为 null） */
+    private Integer ratingScore;
+
+    /** 评价内容 */
+    private String ratingComment;
+
+    /** 评价时间 */
+    private LocalDateTime ratingTime;
 
     /** 创建时间 */
     private LocalDateTime createTime;
@@ -277,6 +305,42 @@ public class OrderVO implements Serializable {
     }
 
     /**
+     * 获取故障分类ID列表。
+     *
+     * @return 故障分类ID列表
+     */
+    public List<Long> getCategoryIds() {
+        return categoryIds;
+    }
+
+    /**
+     * 设置故障分类ID列表。
+     *
+     * @param categoryIds 故障分类ID列表
+     */
+    public void setCategoryIds(List<Long> categoryIds) {
+        this.categoryIds = categoryIds;
+    }
+
+    /**
+     * 获取故障分类名称列表。
+     *
+     * @return 故障分类名称列表
+     */
+    public List<String> getCategoryNames() {
+        return categoryNames;
+    }
+
+    /**
+     * 设置故障分类名称列表。
+     *
+     * @param categoryNames 故障分类名称列表
+     */
+    public void setCategoryNames(List<String> categoryNames) {
+        this.categoryNames = categoryNames;
+    }
+
+    /**
      * 获取故障文字描述。
      *
      * @return 故障文字描述
@@ -292,6 +356,24 @@ public class OrderVO implements Serializable {
      */
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    /**
+     * 获取预估费用。
+     *
+     * @return 预估费用（元），选择“其他”时为 null
+     */
+    public BigDecimal getEstimatedPrice() {
+        return estimatedPrice;
+    }
+
+    /**
+     * 设置预估费用。
+     *
+     * @param estimatedPrice 预估费用（元）
+     */
+    public void setEstimatedPrice(BigDecimal estimatedPrice) {
+        this.estimatedPrice = estimatedPrice;
     }
 
     /**
@@ -382,6 +464,114 @@ public class OrderVO implements Serializable {
      */
     public void setAdminRemark(String adminRemark) {
         this.adminRemark = adminRemark;
+    }
+
+    /**
+     * 获取维修工用户ID。
+     *
+     * @return 维修工用户ID
+     */
+    public Long getWorkerId() {
+        return workerId;
+    }
+
+    /**
+     * 设置维修工用户ID。
+     *
+     * @param workerId 维修工用户ID
+     */
+    public void setWorkerId(Long workerId) {
+        this.workerId = workerId;
+    }
+
+    /**
+     * 获取维修工姓名。
+     *
+     * @return 维修工姓名
+     */
+    public String getWorkerName() {
+        return workerName;
+    }
+
+    /**
+     * 设置维修工姓名。
+     *
+     * @param workerName 维修工姓名
+     */
+    public void setWorkerName(String workerName) {
+        this.workerName = workerName;
+    }
+
+    /**
+     * 获取维修工手机号。
+     *
+     * @return 维修工手机号
+     */
+    public String getWorkerPhone() {
+        return workerPhone;
+    }
+
+    /**
+     * 设置维修工手机号。
+     *
+     * @param workerPhone 维修工手机号
+     */
+    public void setWorkerPhone(String workerPhone) {
+        this.workerPhone = workerPhone;
+    }
+
+    /**
+     * 获取评分。
+     *
+     * @return 评分（1-5星），未评价时为 null
+     */
+    public Integer getRatingScore() {
+        return ratingScore;
+    }
+
+    /**
+     * 设置评分。
+     *
+     * @param ratingScore 评分（1-5星）
+     */
+    public void setRatingScore(Integer ratingScore) {
+        this.ratingScore = ratingScore;
+    }
+
+    /**
+     * 获取评价内容。
+     *
+     * @return 评价内容
+     */
+    public String getRatingComment() {
+        return ratingComment;
+    }
+
+    /**
+     * 设置评价内容。
+     *
+     * @param ratingComment 评价内容
+     */
+    public void setRatingComment(String ratingComment) {
+        this.ratingComment = ratingComment;
+    }
+
+    /**
+     * 获取评价时间。
+     *
+     * @return 评价时间
+     */
+    public LocalDateTime getRatingTime() {
+        return ratingTime;
+    }
+
+    /**
+     * 设置评价时间。
+     *
+     * @param ratingTime 评价时间
+     */
+    public void setRatingTime(LocalDateTime ratingTime) {
+        this.ratingTime = ratingTime;
     }
 
     /**

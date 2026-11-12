@@ -2,9 +2,9 @@ import request from './request'
 
 // ===================== 故障分类接口 =====================
 
-// 查询启用状态的分类列表（所有角色可用，可按地点类型过滤）
-export function listCategories(locationType) {
-  return request.get('/categories', { params: { locationType } })
+// 查询启用状态的分类列表（所有角色可用）
+export function listCategories() {
+  return request.get('/categories')
 }
 
 // 全量分类含停用（仅管理员）

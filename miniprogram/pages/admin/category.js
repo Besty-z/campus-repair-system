@@ -1,33 +1,32 @@
-// 分类管理页（仅 ADMIN）：按地点类型分组展示 + 新增/编辑弹窗 + 删除确认
+// 分类管理页（仅 ADMIN）：分类列表（按维修工种划分）+ 新增/编辑弹窗 + 删除确认
 const { get, post, put, del } = require('../../utils/request');
+const util = require('../../utils/util');
 
 Page({
   data: {
-    dormCategories: [],      // 宿舍楼内分类
-    publicCategories: [],    // 公共区域分类
+    categories: [],          // 全量分类（含停用）
     // 新增/编辑弹窗
     showModal: false,
     editingId: null,         // null=新增，否则为编辑的分类ID
     formName: '',
-    formLocationTypeIndex: 0, // 0=DORM 1=PUBLIC
     formSort: '',
-    formStatus: 1,           // 编辑时保留原状态（1启用 0停用）
-    locationTypeLabels: ['宿舍楼内', '校园公共区域']
+    formPrice: '',           // 服务价格（元，必填）
+    formImageUrl: '',        // 编辑时保留原图片地址
+    formStatus: 1            // 编辑时保留原状态（1启用 0停用）
   },
 
   onLoad() {
     this.loadCategories();
   },
 
-  /** 加载全量分类（含停用，仅 ADMIN 接口） */
+  /** 加载全量分类（含停用，仅 ADMIN 接口），附带价格展示文本 */
   loadCategories() {
     get('/api/categories/admin/all')
       .then((list) => {
-        const all = list || [];
-        this.setData({
-          dormCategories: all.filter((c) => c.locationType === 'DORM'),
-          publicCategories: all.filter((c) => c.locationType === 'PUBLIC')
-        });
+        const categories = (list || []).map((c) => Object.assign({}, c, {
+          priceText: c.price == null ? '面议' : '¥' + util.formatMoney(c.price)
+        }));
+        this.setData({ categories });
       })
       .catch(() => {});
   },
@@ -38,20 +37,23 @@ Page({
       showModal: true,
       editingId: null,
       formName: '',
-      formLocationTypeIndex: 0,
-      formSort: ''
+      formSort: '',
+      formPrice: '',
+      formImageUrl: '',
+      formStatus: 1
     });
   },
 
-  /** 打开编辑弹窗，回填原值 */
+  /** 打开编辑弹窗，回填原值（价格、图片地址按原值保留） */
   showEdit(e) {
     const item = e.currentTarget.dataset.item;
     this.setData({
       showModal: true,
       editingId: item.id,
       formName: item.name,
-      formLocationTypeIndex: item.locationType === 'DORM' ? 0 : 1,
       formSort: String(item.sort),
+      formPrice: item.price == null ? '' : String(item.price),
+      formImageUrl: item.imageUrl || '',
       formStatus: item.status
     });
   },
@@ -67,29 +69,42 @@ Page({
     this.setData({ formName: e.detail.value });
   },
 
-  onFormLocationTypeChange(e) {
-    this.setData({ formLocationTypeIndex: Number(e.detail.value) });
-  },
-
   onFormSortInput(e) {
     this.setData({ formSort: e.detail.value });
   },
 
+  onFormPriceInput(e) {
+    this.setData({ formPrice: e.detail.value });
+  },
+
   /** 保存（新增或编辑） */
   saveCategory() {
-    const { editingId, formName, formLocationTypeIndex, formSort, formStatus } = this.data;
+    const { editingId, formName, formSort, formPrice, formImageUrl, formStatus } = this.data;
     if (!formName.trim()) {
       wx.showToast({ title: '请输入分类名称', icon: 'none' });
       return;
     }
+    // 价格必填，最多两位小数
+    const priceText = String(formPrice).trim();
+    if (!priceText) {
+      wx.showToast({ title: '请输入服务价格', icon: 'none' });
+      return;
+    }
+    if (!/^\d+(\.\d{1,2})?$/.test(priceText)) {
+      wx.showToast({ title: '价格格式不正确（最多两位小数）', icon: 'none' });
+      return;
+    }
     const body = {
       name: formName.trim(),
-      locationType: formLocationTypeIndex === 0 ? 'DORM' : 'PUBLIC',
-      sort: parseInt(formSort, 10) || 0
+      sort: parseInt(formSort, 10) || 0,
+      price: Number(priceText)
     };
-    // 编辑时保留原状态字段
+    // 编辑时保留原状态与图片地址
     const promise = editingId
-      ? put('/api/categories/' + editingId, Object.assign({}, body, { status: formStatus == null ? 1 : formStatus }))
+      ? put('/api/categories/' + editingId, Object.assign({}, body, {
+        status: formStatus == null ? 1 : formStatus,
+        imageUrl: formImageUrl
+      }))
       : post('/api/categories', body);
     promise
       .then(() => {

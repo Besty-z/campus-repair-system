@@ -16,6 +16,9 @@ public final class Constants {
     /** 角色：维修管理员 */
     public static final String ROLE_ADMIN = "ADMIN";
 
+    /** 角色：维修工 */
+    public static final String ROLE_WORKER = "WORKER";
+
     /** 地点类型：宿舍楼内 */
     public static final String LOCATION_DORM = "DORM";
 

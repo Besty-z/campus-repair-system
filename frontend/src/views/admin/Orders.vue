@@ -34,7 +34,6 @@
             placeholder="全部地点"
             clearable
             style="width: 150px"
-            @change="query.categoryId = null"
           >
             <el-option
               v-for="item in LOCATION_TYPE_OPTIONS"
@@ -47,7 +46,7 @@
         <el-form-item label="故障分类">
           <el-select v-model="query.categoryId" placeholder="全部分类" clearable style="width: 160px">
             <el-option
-              v-for="item in filteredCategories"
+              v-for="item in categoryOptions"
               :key="item.id"
               :label="item.name"
               :value="item.id"
@@ -118,13 +117,20 @@
           </template>
         </el-table-column>
 
+        <el-table-column label="维修工" width="120">
+          <template #default="{ row }">
+            <span v-if="row.workerName">{{ row.workerName }}</span>
+            <span v-else class="muted">-</span>
+          </template>
+        </el-table-column>
+
         <el-table-column label="提交时间" width="150">
           <template #default="{ row }">
             <span class="muted">{{ formatTime(row.createTime) }}</span>
           </template>
         </el-table-column>
 
-        <el-table-column label="操作" width="210" align="center" fixed="right">
+        <el-table-column label="操作" width="300" align="center" fixed="right">
           <template #default="{ row }">
             <!-- 接单：仅待接单状态可操作 -->
             <el-button
@@ -135,6 +141,16 @@
               @click="handleAccept(row)"
             >
               接单
+            </el-button>
+            <!-- 指派维修工：仅待接单状态可操作 -->
+            <el-button
+              v-if="row.status === 'PENDING'"
+              type="primary"
+              link
+              size="small"
+              @click="openAssignDialog(row)"
+            >
+              指派维修工
             </el-button>
             <!-- 修改状态：仅流转中的工单可修改（终态不可再改） -->
             <el-button
@@ -212,15 +228,52 @@
       </template>
     </el-dialog>
 
+    <!-- 指派维修工弹窗：仅在职维修工可选 -->
+    <el-dialog v-model="assignDialogVisible" title="指派维修工" width="460px">
+      <div class="dlg-order">
+        <span class="order-no">{{ assignRow?.orderNo }}</span>
+        <span class="status-pill st-pending">待接单</span>
+      </div>
+
+      <el-form label-position="top">
+        <el-form-item label="维修工" required>
+          <el-select
+            v-model="assignForm.workerId"
+            placeholder="请选择在职维修工"
+            filterable
+            style="width: 100%"
+          >
+            <el-option
+              v-for="worker in enabledWorkers"
+              :key="worker.userId"
+              :label="`${worker.name}（${worker.phone}）`"
+              :value="worker.userId"
+            />
+          </el-select>
+          <span v-if="enabledWorkers.length === 0" class="worker-tip">
+            暂无在职维修工，请先到「维修工管理」新增或启用
+          </span>
+        </el-form-item>
+      </el-form>
+
+      <template #footer>
+        <el-button @click="assignDialogVisible = false">取 消</el-button>
+        <el-button type="primary" :loading="assignSubmitting" @click="handleAssign">
+          确 定
+        </el-button>
+      </template>
+    </el-dialog>
+
     <!-- 工单详情弹窗（含图片预览） -->
     <DetailDialog v-model:visible="detailVisible" :order-id="currentOrderId" />
   </div>
 </template>
 
 <script setup>
-import { computed, reactive, ref, onMounted } from 'vue'
+import { reactive, ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getAdminOrderPage, acceptOrder, updateOrderStatus } from '../../api/order'
+import { getAdminOrderPage, acceptOrder, updateOrderStatus, assignOrder } from '../../api/order'
+import { getEnabledWorkers } from '../../api/worker'
 import { listCategories } from '../../api/category'
 import {
   STATUS_MAP,
@@ -246,12 +299,8 @@ const query = reactive({
   pageSize: 10
 })
 
-// 故障分类选项（用于筛选，按所选地点类型过滤）
+// 故障分类选项（用于筛选，后端已按维修工种划分）
 const categoryOptions = ref([])
-const filteredCategories = computed(() => {
-  if (!query.locationType) return categoryOptions.value
-  return categoryOptions.value.filter((item) => item.locationType === query.locationType)
-})
 
 // 修改状态弹窗
 const statusDialogVisible = ref(false)
@@ -262,6 +311,13 @@ const statusForm = reactive({ status: '', adminRemark: '' })
 // 详情弹窗
 const detailVisible = ref(false)
 const currentOrderId = ref(null)
+
+// 指派维修工弹窗
+const assignDialogVisible = ref(false)
+const assignSubmitting = ref(false)
+const assignRow = ref(null)
+const enabledWorkers = ref([])
+const assignForm = reactive({ workerId: null })
 
 /**
  * 计算某状态允许流转到的目标状态（与后端契约一致）
@@ -354,6 +410,32 @@ async function handleUpdateStatus() {
     loadData()
   } finally {
     statusSubmitting.value = false
+  }
+}
+
+// 打开指派维修工弹窗（每次打开重新拉取在职维修工）
+async function openAssignDialog(row) {
+  assignRow.value = row
+  assignForm.workerId = null
+  assignDialogVisible.value = true
+  const res = await getEnabledWorkers()
+  enabledWorkers.value = res.data || []
+}
+
+// 提交指派（workerId 为 WorkerVO.userId）
+async function handleAssign() {
+  if (!assignForm.workerId) {
+    ElMessage.warning('请选择维修工')
+    return
+  }
+  assignSubmitting.value = true
+  try {
+    await assignOrder(assignRow.value.id, assignForm.workerId)
+    ElMessage.success('指派成功')
+    assignDialogVisible.value = false
+    loadData()
+  } finally {
+    assignSubmitting.value = false
   }
 }
 
@@ -581,6 +663,14 @@ onMounted(async () => {
 
 .status-form :deep(.el-form-item) {
   margin-bottom: 14px;
+}
+
+/* 指派弹窗：无在职维修工提示 */
+.worker-tip {
+  display: block;
+  margin-top: 8px;
+  font-size: 12px;
+  color: #a9b4c6;
 }
 
 .pagination {

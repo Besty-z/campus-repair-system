@@ -1,0 +1,72 @@
+<!-- 维修工：我的资料 -->
+<view class="profile-page">
+  <!-- 身份头部 -->
+  <view class="worker-hero" wx:if="{{worker}}">
+    <view class="hero-deco hero-deco-a"></view>
+    <view class="hero-deco hero-deco-b"></view>
+    <view class="hero-top">
+      <view class="hero-avatar">{{avatarText}}</view>
+      <view class="hero-main">
+        <view class="hero-name-row">
+          <text class="hero-name">{{worker.name || '维修工'}}</text>
+          <text class="hero-status">{{statusText}}</text>
+        </view>
+        <view class="hero-phone">{{worker.phone}}</view>
+      </view>
+    </view>
+    <view class="hero-tags" wx:if="{{worker.categoryNames && worker.categoryNames.length > 0}}">
+      <text class="hero-tag" wx:for="{{worker.categoryNames}}" wx:key="*this">{{item}}</text>
+    </view>
+  </view>
+
+  <!-- 数据统计 -->
+  <view class="card stat-card" wx:if="{{worker}}">
+    <view class="stat-item">
+      <view class="stat-num">{{completedCount}}</view>
+      <view class="stat-label">完成工单</view>
+    </view>
+    <view class="stat-divider"></view>
+    <view class="stat-item">
+      <view class="stat-num">{{avgRatingText}}</view>
+      <view class="stat-label">平均评分</view>
+    </view>
+    <view class="stat-divider"></view>
+    <view class="stat-item">
+      <view class="stat-num">{{ratingCount}}</view>
+      <view class="stat-label">评价数</view>
+    </view>
+  </view>
+
+  <!-- 资料编辑 -->
+  <view class="card" wx:if="{{worker}}">
+    <view class="section-head">
+      <text class="section-title">资料编辑</text>
+      <text class="section-tip">维修工档案</text>
+    </view>
+    <view class="form-item">
+      <text class="form-label">个人简介</text>
+      <textarea class="form-textarea" placeholder="介绍一下你的维修经验与擅长领域"
+                value="{{intro}}" bindinput="onIntroInput" maxlength="200" />
+    </view>
+    <view class="form-item">
+      <text class="form-label">擅长分类</text>
+      <view class="cat-select">
+        <text class="cat-option {{item.checked ? 'cat-option-active' : ''}}"
+              wx:for="{{categories}}" wx:key="id"
+              data-id="{{item.id}}" bindtap="toggleCategory">{{item.name}}</text>
+      </view>
+      <view class="empty-small" wx:if="{{categories.length === 0}}">暂无可选分类</view>
+    </view>
+  </view>
+
+  <!-- 保存按钮 -->
+  <button class="btn-primary save-btn" wx:if="{{worker}}" disabled="{{saving}}" bindtap="saveProfile">
+    {{saving ? '保存中…' : '保存资料'}}
+  </button>
+
+  <!-- 未开通维修工身份 -->
+  <view class="empty-state" wx:if="{{!loading && !worker}}">
+    <view class="empty-icon">○</view>
+    <view class="empty-text">尚未开通维修工身份，请联系管理员开通</view>
+  </view>
+</view>

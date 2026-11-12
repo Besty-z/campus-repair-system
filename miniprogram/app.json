@@ -9,7 +9,11 @@
     "pages/stats/stats",
     "pages/admin/order",
     "pages/admin/category",
-    "pages/admin/user"
+    "pages/admin/user",
+    "pages/worker/tasks",
+    "pages/worker/pool",
+    "pages/worker/profile",
+    "pages/admin/worker"
   ],
   "window": {
     "navigationBarBackgroundColor": "#2c6bf2",

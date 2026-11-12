@@ -50,6 +50,7 @@ public class WebConfig implements WebMvcConfigurer {
                         "/auth/send-code",
                         "/auth/login",
                         "/auth/register",
+                        "/ads",
                         "/uploads/**",
                         "/error");
     }

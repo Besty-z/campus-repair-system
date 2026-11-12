@@ -9,6 +9,7 @@ import com.campus.repair.dto.CategoryDTO;
 import com.campus.repair.entity.FaultCategory;
 import com.campus.repair.entity.RepairOrder;
 import com.campus.repair.mapper.FaultCategoryMapper;
+import com.campus.repair.mapper.RepairOrderCategoryMapper;
 import com.campus.repair.mapper.RepairOrderMapper;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,6 +41,9 @@ class FaultCategoryServiceImplTest {
     @Mock
     private RepairOrderMapper repairOrderMapper;
 
+    @Mock
+    private RepairOrderCategoryMapper repairOrderCategoryMapper;
+
     @InjectMocks
     private FaultCategoryServiceImpl faultCategoryService;
 
@@ -66,8 +70,7 @@ class FaultCategoryServiceImplTest {
     void create_nonAdmin_throws() {
         UserContext.set(1L, Constants.ROLE_USER);
         CategoryDTO dto = new CategoryDTO();
-        dto.setName("网络故障");
-        dto.setLocationType(Constants.LOCATION_DORM);
+        dto.setName("网络弱电");
         dto.setSort(7);
 
         BizException ex = assertThrows(BizException.class,
@@ -84,10 +87,10 @@ class FaultCategoryServiceImplTest {
         UserContext.set(99L, Constants.ROLE_ADMIN);
         FaultCategory category = new FaultCategory();
         category.setId(1L);
-        category.setName("水电故障");
+        category.setName("水电类");
         when(faultCategoryMapper.selectById(1L)).thenReturn(category);
-        // 模拟该分类下已有 3 个工单
-        when(repairOrderMapper.selectCount(any(LambdaQueryWrapper.class))).thenReturn(3L);
+        // 模拟该分类下已有 3 个工单（多选关联表）
+        when(repairOrderCategoryMapper.selectCount(any(LambdaQueryWrapper.class))).thenReturn(3L);
 
         String message = faultCategoryService.delete(1L);
 
@@ -109,6 +112,7 @@ class FaultCategoryServiceImplTest {
         category.setId(2L);
         category.setName("临时分类");
         when(faultCategoryMapper.selectById(2L)).thenReturn(category);
+        when(repairOrderCategoryMapper.selectCount(any(LambdaQueryWrapper.class))).thenReturn(0L);
         when(repairOrderMapper.selectCount(any(LambdaQueryWrapper.class))).thenReturn(0L);
 
         String message = faultCategoryService.delete(2L);

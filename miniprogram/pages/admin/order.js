@@ -26,7 +26,12 @@ Page({
     list: [],
     pageNum: 1,
     hasMore: true,
-    loading: false
+    loading: false,
+    // 指派维修工弹窗
+    showAssignModal: false,
+    assignOrderId: null,
+    assignWorkers: [],
+    assignWorkerId: null
   },
 
   onLoad() {
@@ -196,5 +201,49 @@ Page({
   goDetail(e) {
     const id = e.currentTarget.dataset.id;
     wx.navigateTo({ url: '/pages/order/detail?id=' + id });
+  },
+
+  /** 打开指派弹窗，加载在职维修工 */
+  openAssign(e) {
+    const id = e.currentTarget.dataset.id;
+    this.setData({ assignOrderId: id, assignWorkerId: null });
+    get('/api/workers/admin/enabled')
+      .then((list) => {
+        const workers = list || [];
+        this.setData({ assignWorkers: workers, showAssignModal: true });
+        if (workers.length === 0) {
+          wx.showToast({ title: '暂无在职维修工', icon: 'none' });
+        }
+      })
+      .catch(() => {});
+  },
+
+  /** 关闭指派弹窗 */
+  hideAssign() {
+    this.setData({ showAssignModal: false });
+  },
+
+  /** 弹窗内容点击不冒泡到遮罩 */
+  noop() {},
+
+  /** 选择维修工 */
+  selectWorker(e) {
+    this.setData({ assignWorkerId: e.currentTarget.dataset.id });
+  },
+
+  /** 确认指派 */
+  confirmAssign() {
+    const { assignOrderId, assignWorkerId } = this.data;
+    if (!assignWorkerId) {
+      wx.showToast({ title: '请选择维修工', icon: 'none' });
+      return;
+    }
+    put('/api/orders/admin/' + assignOrderId + '/assign', { workerId: assignWorkerId })
+      .then(() => {
+        wx.showToast({ title: '指派成功', icon: 'success' });
+        this.setData({ showAssignModal: false });
+        this.reload();
+      })
+      .catch(() => {});
   }
 });

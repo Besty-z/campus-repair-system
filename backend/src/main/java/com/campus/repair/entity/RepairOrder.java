@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
@@ -43,6 +44,9 @@ public class RepairOrder {
     /** 自定义故障类型（用户选择“其他”时填写） */
     private String customCategory;
 
+    /** 预估费用（元，会员已按8折计算；选择“其他”时为 null 表示面议） */
+    private BigDecimal estimatedPrice;
+
     /** 故障文字描述 */
     private String description;
 
@@ -61,11 +65,23 @@ public class RepairOrder {
     /** 接单管理员ID */
     private Long adminId;
 
+    /** 维修工用户ID（关联 sys_user.id） */
+    private Long workerId;
+
     /** 接单时间 */
     private LocalDateTime acceptTime;
 
     /** 完成时间 */
     private LocalDateTime finishTime;
+
+    /** 评分（1-5星，完成后由报修人评价） */
+    private Integer ratingScore;
+
+    /** 评价内容 */
+    private String ratingComment;
+
+    /** 评价时间 */
+    private LocalDateTime ratingTime;
 
     /** 创建时间 */
     private LocalDateTime createTime;
@@ -242,6 +258,24 @@ public class RepairOrder {
     }
 
     /**
+     * 获取预估费用。
+     *
+     * @return 预估费用（元），选择“其他”时为 null
+     */
+    public BigDecimal getEstimatedPrice() {
+        return estimatedPrice;
+    }
+
+    /**
+     * 设置预估费用。
+     *
+     * @param estimatedPrice 预估费用（元）
+     */
+    public void setEstimatedPrice(BigDecimal estimatedPrice) {
+        this.estimatedPrice = estimatedPrice;
+    }
+
+    /**
      * 获取故障文字描述。
      *
      * @return 故障文字描述
@@ -350,6 +384,24 @@ public class RepairOrder {
     }
 
     /**
+     * 获取维修工用户ID。
+     *
+     * @return 维修工用户ID
+     */
+    public Long getWorkerId() {
+        return workerId;
+    }
+
+    /**
+     * 设置维修工用户ID。
+     *
+     * @param workerId 维修工用户ID
+     */
+    public void setWorkerId(Long workerId) {
+        this.workerId = workerId;
+    }
+
+    /**
      * 获取接单时间。
      *
      * @return 接单时间
@@ -383,6 +435,60 @@ public class RepairOrder {
      */
     public void setFinishTime(LocalDateTime finishTime) {
         this.finishTime = finishTime;
+    }
+
+    /**
+     * 获取评分。
+     *
+     * @return 评分（1-5星），未评价时为 null
+     */
+    public Integer getRatingScore() {
+        return ratingScore;
+    }
+
+    /**
+     * 设置评分。
+     *
+     * @param ratingScore 评分（1-5星）
+     */
+    public void setRatingScore(Integer ratingScore) {
+        this.ratingScore = ratingScore;
+    }
+
+    /**
+     * 获取评价内容。
+     *
+     * @return 评价内容
+     */
+    public String getRatingComment() {
+        return ratingComment;
+    }
+
+    /**
+     * 设置评价内容。
+     *
+     * @param ratingComment 评价内容
+     */
+    public void setRatingComment(String ratingComment) {
+        this.ratingComment = ratingComment;
+    }
+
+    /**
+     * 获取评价时间。
+     *
+     * @return 评价时间
+     */
+    public LocalDateTime getRatingTime() {
+        return ratingTime;
+    }
+
+    /**
+     * 设置评价时间。
+     *
+     * @param ratingTime 评价时间
+     */
+    public void setRatingTime(LocalDateTime ratingTime) {
+        this.ratingTime = ratingTime;
     }
 
     /**

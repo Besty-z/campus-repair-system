@@ -59,11 +59,29 @@
           </div>
           <div class="info-item">
             <span class="info-label">故障分类</span>
-            <span class="info-value">{{ detail.categoryName }}</span>
+            <span class="info-value">
+              <template v-if="detailCategoryNames.length">
+                <el-tag
+                  v-for="(name, index) in detailCategoryNames"
+                  :key="index"
+                  size="small"
+                  class="cat-tag"
+                >
+                  {{ name }}
+                </el-tag>
+              </template>
+              <template v-else>-</template>
+            </span>
           </div>
           <div class="info-item">
             <span class="info-label">是否紧急</span>
             <span class="info-value">{{ detail.urgent === 1 ? '紧急工单（优先处理）' : '普通工单' }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">预估费用</span>
+            <span class="info-value est-price" :class="{ 'is-empty': detail.estimatedPrice == null }">
+              {{ formatEstimatedPrice(detail.estimatedPrice) }}
+            </span>
           </div>
           <div class="info-item">
             <span class="info-label">预约上门</span>
@@ -74,6 +92,10 @@
           <div class="info-item">
             <span class="info-label">报修人</span>
             <span class="info-value">{{ detail.userNickname }}（{{ detail.userPhone }}）</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">维修工</span>
+            <span class="info-value" :class="{ 'is-empty': !detail.workerName }">{{ workerText }}</span>
           </div>
         </div>
 
@@ -88,6 +110,21 @@
           <p class="block-title">维修备注</p>
           <p class="desc-text" :class="{ 'is-empty': !detail.adminRemark }">
             {{ detail.adminRemark || '暂无维修备注' }}
+          </p>
+        </div>
+
+        <!-- 用户评价：有评分时展示星级、分数与评价内容 -->
+        <div v-if="detail.ratingScore != null" class="text-block">
+          <p class="block-title">用户评价</p>
+          <div class="rating-row">
+            <el-rate :model-value="detail.ratingScore" disabled />
+            <span class="rating-score">{{ detail.ratingScore }} 分</span>
+            <span v-if="detail.ratingTime" class="rating-time">
+              {{ formatTime(detail.ratingTime) }}
+            </span>
+          </div>
+          <p class="desc-text" :class="{ 'is-empty': !detail.ratingComment }">
+            {{ detail.ratingComment || '用户未填写评价内容' }}
           </p>
         </div>
 
@@ -127,7 +164,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { getOrderDetail } from '../../api/order'
 import { STATUS_MAP, LOCATION_TYPE_MAP, dictLabel, dictTagType, formatLocation } from '../../utils/dict'
 
@@ -141,6 +178,20 @@ const emit = defineEmits(['update:visible'])
 
 const loading = ref(false)
 const detail = ref(null)
+
+// 分类展示：优先使用 categoryNames（多选），否则回退 categoryName
+const detailCategoryNames = computed(() => {
+  if (detail.value?.categoryNames?.length) return detail.value.categoryNames
+  return detail.value?.categoryName ? [detail.value.categoryName] : []
+})
+
+// 维修工展示：姓名（手机号），未指派时提示
+const workerText = computed(() => {
+  const name = detail.value?.workerName
+  if (!name) return '待指派'
+  const phone = detail.value?.workerPhone
+  return phone ? `${name}（${phone}）` : name
+})
 
 // 弹窗打开时加载工单详情
 async function loadDetail() {
@@ -164,6 +215,16 @@ function handleUpdate(value) {
 function formatTime(value) {
   if (!value) return '-'
   return String(value).replace('T', ' ').slice(0, 16)
+}
+
+/**
+ * 预估费用展示：null 表示「其他」分类面议
+ * @param {number|null} value 预估费用
+ * @returns {string} 展示文本
+ */
+function formatEstimatedPrice(value) {
+  if (value == null) return '面议'
+  return `¥${Number(value).toFixed(2).replace(/\.?0+$/, '') || '0'}`
 }
 </script>
 
@@ -296,6 +357,27 @@ function formatTime(value) {
   word-break: break-all;
 }
 
+.info-value.is-empty {
+  color: #a9b4c6;
+}
+
+/* 预估费用：橙色强调，面议时恢复弱化色 */
+.info-value.est-price {
+  font-weight: 700;
+  color: #ff6b00;
+}
+
+.info-value.est-price.is-empty {
+  font-weight: 400;
+  color: #a9b4c6;
+}
+
+/* 多选分类小标签 */
+.cat-tag {
+  margin-right: 6px;
+  margin-bottom: 4px;
+}
+
 /* 文本区 */
 .text-block {
   margin-bottom: 16px;
@@ -312,6 +394,26 @@ function formatTime(value) {
 }
 
 .desc-text.is-empty {
+  color: #a9b4c6;
+}
+
+/* 用户评价 */
+.rating-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 2px 8px;
+}
+
+.rating-score {
+  font-size: 13px;
+  font-weight: 700;
+  color: #a76a05;
+}
+
+.rating-time {
+  margin-left: auto;
+  font-size: 11px;
   color: #a9b4c6;
 }
 

@@ -28,14 +28,21 @@ public interface RepairOrderMapper extends BaseMapper<RepairOrder> {
     List<Map<String, Object>> countByStatus(@Param("userId") Long userId);
 
     /**
-     * 按故障分类分组统计某用户的工单数量。
+     * 按故障分类分组统计某用户的工单数量（多选分类按关联表统计，多分类工单计入各自分类）。
+     * 选择“其他”的工单（category_id 为空）以自定义故障类型作为分类名。
      *
      * @param userId 用户ID
      * @return 每行含 categoryName（分类名）与 count（数量），按数量降序
      */
-    @Select("SELECT c.name AS categoryName, COUNT(*) AS count FROM repair_order o "
-            + "JOIN fault_category c ON o.category_id = c.id "
-            + "WHERE o.user_id = #{userId} GROUP BY c.name ORDER BY count DESC")
+    @Select("SELECT t.name AS categoryName, COUNT(*) AS count FROM ("
+            + "SELECT c.name AS name FROM repair_order o "
+            + "JOIN repair_order_category oc ON oc.order_id = o.id "
+            + "JOIN fault_category c ON c.id = oc.category_id "
+            + "WHERE o.user_id = #{userId} "
+            + "UNION ALL "
+            + "SELECT COALESCE(o.custom_category, '其他') AS name FROM repair_order o "
+            + "WHERE o.user_id = #{userId} AND o.category_id IS NULL"
+            + ") t GROUP BY t.name ORDER BY count DESC")
     List<Map<String, Object>> countByCategory(@Param("userId") Long userId);
 
     /**
