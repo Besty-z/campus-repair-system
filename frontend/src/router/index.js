@@ -14,10 +14,17 @@ const routes = [
     meta: { title: '登录' }
   },
   {
-    // 首页不固定重定向：由守卫根据角色跳转到各自首页（管理员 -> 工单管理，普通用户/会员 -> 提交报修）
+    // 首页为工作台：展示概览统计、最近工单与快捷入口（各角色共用）
     path: '/',
     component: () => import('../views/layout/Layout.vue'),
     children: [
+      {
+        // 工作台首页（所有角色）：概览统计 + 快捷入口
+        path: '',
+        name: 'Home',
+        component: () => import('../views/home/Home.vue'),
+        meta: { title: '工作台' }
+      },
       {
         // 提交报修（USER / VIP）
         path: 'repair/submit',
@@ -95,16 +102,16 @@ router.beforeEach((to) => {
     return { path: '/login' }
   }
 
-  // 访问根路径：按角色跳转到对应首页
+  // 访问根路径：展示工作台首页
   if (to.path === '/') {
-    return { path: userStore.role === 'ADMIN' ? '/admin/orders' : '/repair/submit' }
+    return true
   }
 
-  // 角色权限校验（无权限时跳回本角色首页并提示）
+  // 角色权限校验（无权限时跳回首页并提示）
   const allowRoles = to.meta.roles
   if (allowRoles && allowRoles.length > 0 && !allowRoles.includes(userStore.role)) {
     ElMessage.warning('没有访问该页面的权限')
-    return { path: userStore.role === 'ADMIN' ? '/admin/orders' : '/repair/submit' }
+    return { path: '/' }
   }
 
   return true

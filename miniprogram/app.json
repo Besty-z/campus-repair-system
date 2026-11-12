@@ -1,5 +1,6 @@
 {
   "pages": [
+    "pages/home/home",
     "pages/repair/submit",
     "pages/order/list",
     "pages/mine/mine",
@@ -11,27 +12,40 @@
     "pages/admin/user"
   ],
   "window": {
-    "navigationBarBackgroundColor": "#3b7cff",
+    "navigationBarBackgroundColor": "#2c6bf2",
     "navigationBarTitleText": "校园报修预约系统",
     "navigationBarTextStyle": "white",
-    "backgroundColor": "#f5f6fa"
+    "backgroundColor": "#f4f7fc"
   },
   "tabBar": {
     "color": "#999999",
-    "selectedColor": "#3b7cff",
+    "selectedColor": "#2c6bf2",
     "backgroundColor": "#ffffff",
+    "borderStyle": "white",
     "list": [
       {
+        "pagePath": "pages/home/home",
+        "text": "首页",
+        "iconPath": "images/tabbar/home-default.png",
+        "selectedIconPath": "images/tabbar/home-selected.png"
+      },
+      {
         "pagePath": "pages/repair/submit",
-        "text": "我要报修"
+        "text": "我要报修",
+        "iconPath": "images/tabbar/repair-default.png",
+        "selectedIconPath": "images/tabbar/repair-selected.png"
       },
       {
         "pagePath": "pages/order/list",
-        "text": "我的工单"
+        "text": "我的工单",
+        "iconPath": "images/tabbar/order-default.png",
+        "selectedIconPath": "images/tabbar/order-selected.png"
       },
       {
         "pagePath": "pages/mine/mine",
-        "text": "我的"
+        "text": "我的",
+        "iconPath": "images/tabbar/mine-default.png",
+        "selectedIconPath": "images/tabbar/mine-selected.png"
       }
     ]
   },

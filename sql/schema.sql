@@ -8,6 +8,9 @@ CREATE DATABASE IF NOT EXISTS campus_repair DEFAULT CHARACTER SET utf8mb4 COLLAT
 
 USE campus_repair;
 
+-- 显式声明客户端字符集，避免 Windows 下客户端按 GBK/latin1 解析本文件中的中文
+SET NAMES utf8mb4;
+
 -- -------------------------------------------------------------
 -- 用户表：普通用户 / 会员用户 / 维修管理员 共用一张表
 -- 角色字段 role 区分身份，小程序与网页端登录同一账号权限一致
@@ -84,7 +87,8 @@ CREATE TABLE repair_order (
     building_no      VARCHAR(50)  DEFAULT NULL COMMENT '宿舍楼号（location_type=DORM时填写）',
     room_no          VARCHAR(50)  DEFAULT NULL COMMENT '宿舍房间号（location_type=DORM时填写）',
     public_location  VARCHAR(200) DEFAULT NULL COMMENT '公共区域具体位置（location_type=PUBLIC时填写）',
-    category_id      BIGINT       NOT NULL COMMENT '故障分类ID（关联fault_category）',
+    category_id      BIGINT       DEFAULT NULL COMMENT '故障分类ID（选择其他自定义类型时为NULL）',
+    custom_category  VARCHAR(50)  DEFAULT NULL COMMENT '自定义故障类型（用户选择“其他”时填写）',
     description      VARCHAR(500) NOT NULL DEFAULT '' COMMENT '故障文字描述',
     urgent           TINYINT      NOT NULL DEFAULT 0 COMMENT '是否紧急：1紧急 0普通（仅会员可标记）',
     appointment_time DATETIME     DEFAULT NULL COMMENT '会员自选预约上门时间（普通用户为NULL，系统默认派单）',

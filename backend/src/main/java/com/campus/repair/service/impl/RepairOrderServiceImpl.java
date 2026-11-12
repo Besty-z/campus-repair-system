@@ -33,6 +33,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -136,10 +137,17 @@ public class RepairOrderServiceImpl implements RepairOrderService {
             throw new BizException(ResultCode.BAD_REQUEST, "公共区域报修必须填写具体位置");
         }
 
-        // 故障分类必须存在且处于启用状态
-        FaultCategory category = faultCategoryMapper.selectById(dto.getCategoryId());
-        if (category == null || !Integer.valueOf(Constants.STATUS_ENABLED).equals(category.getStatus())) {
-            throw new BizException(ResultCode.BAD_REQUEST, "故障分类不存在或已停用");
+        // 故障分类：选择“其他（自行填写）”时以自定义类型为准并忽略 categoryId；否则分类必须存在且启用
+        String customCategory = StringUtils.hasText(dto.getCustomCategory()) ? dto.getCustomCategory().trim() : null;
+        FaultCategory category = null;
+        if (customCategory == null) {
+            if (dto.getCategoryId() == null) {
+                throw new BizException(ResultCode.BAD_REQUEST, "请选择故障分类，或选择“其他”并填写故障类型");
+            }
+            category = faultCategoryMapper.selectById(dto.getCategoryId());
+            if (category == null || !Integer.valueOf(Constants.STATUS_ENABLED).equals(category.getStatus())) {
+                throw new BizException(ResultCode.BAD_REQUEST, "故障分类不存在或已停用");
+            }
         }
 
         LocalDateTime now = LocalDateTime.now();
@@ -149,7 +157,8 @@ public class RepairOrderServiceImpl implements RepairOrderService {
         order.setBuildingNo(dto.getBuildingNo());
         order.setRoomNo(dto.getRoomNo());
         order.setPublicLocation(dto.getPublicLocation());
-        order.setCategoryId(dto.getCategoryId());
+        order.setCategoryId(customCategory == null ? dto.getCategoryId() : null);
+        order.setCustomCategory(customCategory);
         order.setDescription(dto.getDescription());
         order.setUrgent(urgent == null ? 0 : urgent);
         order.setAppointmentTime(appointmentTime);
@@ -173,7 +182,7 @@ public class RepairOrderServiceImpl implements RepairOrderService {
             repairOrderImageMapper.insert(image);
         }
         log.info("用户 {} 提交报修工单成功，工单号：{}", userId, order.getOrderNo());
-        return toVO(order, user, category.getName(), images);
+        return toVO(order, user, customCategory == null ? category.getName() : customCategory, images);
     }
 
     /**
@@ -248,7 +257,7 @@ public class RepairOrderServiceImpl implements RepairOrderService {
      * @param status       工单状态（可选）
      * @param locationType 地点类型（可选）
      * @param categoryId   故障分类ID（可选）
-     * @param keyword      关键字（可选，模糊匹配位置/描述/工单号）
+     * @param keyword      关键字（可选，模糊匹配位置/描述/工单号/自定义故障类型）
      * @param pageNum      页码
      * @param pageSize     每页大小
      * @return 分页结果
@@ -267,7 +276,8 @@ public class RepairOrderServiceImpl implements RepairOrderService {
                         .or().like(RepairOrder::getOrderNo, keyword)
                         .or().like(RepairOrder::getBuildingNo, keyword)
                         .or().like(RepairOrder::getRoomNo, keyword)
-                        .or().like(RepairOrder::getPublicLocation, keyword))
+                        .or().like(RepairOrder::getPublicLocation, keyword)
+                        .or().like(RepairOrder::getCustomCategory, keyword))
                 .orderByDesc(RepairOrder::getUrgent)
                 .orderByDesc(RepairOrder::getCreateTime);
         Page<RepairOrder> result = repairOrderMapper.selectPage(page, wrapper);
@@ -387,9 +397,15 @@ public class RepairOrderServiceImpl implements RepairOrderService {
         if (orders == null || orders.isEmpty()) {
             return Collections.emptyList();
         }
-        Set<Long> categoryIds = orders.stream().map(RepairOrder::getCategoryId).collect(Collectors.toSet());
-        Map<Long, String> categoryNameMap = faultCategoryMapper.selectBatchIds(categoryIds).stream()
-                .collect(Collectors.toMap(FaultCategory::getId, FaultCategory::getName));
+        // 自定义故障类型工单的 categoryId 为 null，先过滤掉，避免 selectBatchIds 传入 null/空集合
+        Set<Long> categoryIds = orders.stream()
+                .map(RepairOrder::getCategoryId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        Map<Long, String> categoryNameMap = categoryIds.isEmpty()
+                ? Collections.emptyMap()
+                : faultCategoryMapper.selectBatchIds(categoryIds).stream()
+                        .collect(Collectors.toMap(FaultCategory::getId, FaultCategory::getName));
         Set<Long> userIds = orders.stream().map(RepairOrder::getUserId).collect(Collectors.toSet());
         Map<Long, SysUser> userMap = sysUserMapper.selectBatchIds(userIds).stream()
                 .collect(Collectors.toMap(SysUser::getId, Function.identity()));
@@ -431,7 +447,8 @@ public class RepairOrderServiceImpl implements RepairOrderService {
         vo.setRoomNo(order.getRoomNo());
         vo.setPublicLocation(order.getPublicLocation());
         vo.setCategoryId(order.getCategoryId());
-        vo.setCategoryName(categoryName);
+        // 自定义故障类型优先展示，未填写时回退到分类名称
+        vo.setCategoryName(StringUtils.hasText(order.getCustomCategory()) ? order.getCustomCategory() : categoryName);
         vo.setDescription(order.getDescription());
         vo.setImages(images);
         vo.setUrgent(order.getUrgent());

@@ -22,7 +22,10 @@
              value="{{keyword}}" bindinput="onKeywordInput" bindconfirm="onSearch" />
       <button class="search-btn" size="mini" bindtap="onSearch">搜索</button>
     </view>
-    <view class="urgent-hint">🔥 紧急工单优先展示（红色边框）</view>
+    <view class="urgent-hint">
+      <view class="urgent-dot"></view>
+      <text>紧急工单优先展示</text>
+    </view>
   </view>
 
   <!-- 工单卡片 -->
@@ -32,7 +35,7 @@
       <text class="order-no">{{item.orderNo}}</text>
       <view class="head-right">
         <text class="urgent-tag" wx:if="{{item.urgent === 1}}">紧急</text>
-        <text class="tag status-tag" style="background: {{item.statusColor}}1a; color: {{item.statusColor}};">{{item.statusText}}</text>
+        <text class="tag" style="background: {{item.statusColor}}1a; color: {{item.statusColor}};">{{item.statusText}}</text>
       </view>
     </view>
     <view data-id="{{item.id}}" bindtap="goDetail">

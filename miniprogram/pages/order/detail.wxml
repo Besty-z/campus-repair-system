@@ -2,14 +2,47 @@
 <view class="detail-page" wx:if="{{order}}">
   <!-- 状态头部 -->
   <view class="status-banner" style="background: {{order.statusColor}};">
+    <view class="banner-deco banner-deco-a"></view>
+    <view class="banner-deco banner-deco-b"></view>
+    <view class="status-tag">工单状态</view>
     <view class="status-text">{{order.statusText}}</view>
-    <view class="order-no-text">工单号：{{order.orderNo}}</view>
-    <view class="urgent-text" wx:if="{{order.urgent === 1}}">⚠ 紧急工单</view>
+    <view class="status-desc">{{order.statusDesc}}</view>
+    <view class="banner-foot">
+      <text class="order-no-text">工单号 {{order.orderNo}}</text>
+      <text class="urgent-text" wx:if="{{order.urgent === 1}}">紧急 · 优先处理</text>
+    </view>
+  </view>
+
+  <!-- 维修进度 -->
+  <view class="card progress-card" wx:if="{{order.status !== 'REJECTED'}}">
+    <view class="section-head">
+      <text class="section-title">维修进度</text>
+    </view>
+    <view class="timeline">
+      <view class="tl-item" wx:for="{{steps}}" wx:key="index">
+        <view class="tl-left">
+          <view class="tl-dot {{item.done ? 'tl-dot-done' : ''}}"></view>
+          <view class="tl-line" wx:if="{{index < steps.length - 1}}"></view>
+        </view>
+        <view class="tl-content">
+          <view class="tl-name {{item.done ? 'tl-name-done' : ''}}">{{item.name}}</view>
+          <view class="tl-time">{{item.time || '待处理'}}</view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 驳回原因 -->
+  <view class="card reject-card" wx:else>
+    <view class="reject-title">工单已驳回</view>
+    <view class="reject-desc">{{order.adminRemark || '请联系维修管理员了解详情'}}</view>
   </view>
 
   <!-- 基本信息 -->
   <view class="card">
-    <view class="section-title">报修信息</view>
+    <view class="section-head">
+      <text class="section-title">报修信息</text>
+    </view>
     <view class="info-row"><text class="info-label">地点类型</text><text class="info-value">{{order.locationTypeText}}</text></view>
     <view class="info-row"><text class="info-label">具体地点</text><text class="info-value">{{order.locationText}}</text></view>
     <view class="info-row"><text class="info-label">故障分类</text><text class="info-value">{{order.categoryName}}</text></view>
@@ -21,7 +54,10 @@
 
   <!-- 故障图片九宫格 -->
   <view class="card" wx:if="{{imageUrls.length > 0}}">
-    <view class="section-title">故障图片</view>
+    <view class="section-head">
+      <text class="section-title">故障图片</text>
+      <text class="section-tip">共 {{imageUrls.length}} 张</text>
+    </view>
     <view class="img-grid">
       <image wx:for="{{imageUrls}}" wx:key="index" src="{{item}}" mode="aspectFill"
              class="grid-img" data-index="{{index}}" bindtap="previewImage" />
@@ -29,14 +65,18 @@
   </view>
 
   <!-- 维修备注 -->
-  <view class="card" wx:if="{{order.adminRemark}}">
-    <view class="section-title">维修备注</view>
+  <view class="card remark-card" wx:if="{{order.adminRemark && order.status !== 'REJECTED'}}">
+    <view class="section-head">
+      <text class="section-title">维修备注</text>
+    </view>
     <view class="remark-text">{{order.adminRemark}}</view>
   </view>
 
   <!-- 时间与报修人信息 -->
   <view class="card">
-    <view class="section-title">进度信息</view>
+    <view class="section-head">
+      <text class="section-title">进度信息</text>
+    </view>
     <view class="info-row"><text class="info-label">报修人</text><text class="info-value">{{order.userNickname}}（{{order.userPhone}}）</text></view>
     <view class="info-row"><text class="info-label">提交时间</text><text class="info-value">{{order.createTime}}</text></view>
     <view class="info-row" wx:if="{{order.acceptTime}}"><text class="info-label">接单时间</text><text class="info-value">{{order.acceptTime}}</text></view>

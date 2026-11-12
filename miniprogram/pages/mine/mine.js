@@ -5,6 +5,7 @@ const util = require('../../utils/util');
 Page({
   data: {
     userInfo: null,      // 当前用户信息
+    avatarText: '用',    // 头像文字（昵称首字）
     roleText: '',        // 角色中文
     roleColor: '',       // 角色颜色
     isVip: false,
@@ -15,7 +16,13 @@ Page({
     const app = getApp();
     const userInfo = app.globalData.userInfo;
     if (!userInfo) {
-      this.setData({ userInfo: null });
+      this.setData({
+        userInfo: null,
+        avatarText: '用',
+        roleText: '',
+        isVip: false,
+        isAdmin: false
+      });
       return;
     }
     this.renderUser(userInfo);
@@ -34,8 +41,10 @@ Page({
    * @param {object} userInfo 用户信息
    */
   renderUser(userInfo) {
+    const nickname = userInfo.nickname || '校园用户';
     this.setData({
       userInfo,
+      avatarText: nickname.slice(0, 1) || '用',
       roleText: util.roleText(userInfo.role),
       roleColor: util.roleColor(userInfo.role),
       isVip: userInfo.role === 'VIP',
@@ -46,6 +55,16 @@ Page({
   /** 去登录 */
   goLogin() {
     wx.navigateTo({ url: '/pages/login/login' });
+  },
+
+  /** 跳转提交报修 */
+  goSubmit() {
+    wx.switchTab({ url: '/pages/repair/submit' });
+  },
+
+  /** 跳转我的工单 */
+  goOrders() {
+    wx.switchTab({ url: '/pages/order/list' });
   },
 
   /** 跳报修统计（VIP） */
@@ -74,7 +93,13 @@ Page({
       success: (res) => {
         if (res.confirm) {
           getApp().clearLogin();
-          this.setData({ userInfo: null });
+          this.setData({
+            userInfo: null,
+            avatarText: '用',
+            roleText: '',
+            isVip: false,
+            isAdmin: false
+          });
           wx.showToast({ title: '已退出', icon: 'success' });
         }
       }

@@ -8,31 +8,43 @@
   </scroll-view>
 
   <!-- 工单卡片列表 -->
-  <view class="card order-card" wx:for="{{list}}" wx:key="id" data-id="{{item.id}}" bindtap="goDetail">
+  <view class="card order-card {{item.urgent === 1 ? 'order-urgent' : ''}}"
+        wx:for="{{list}}" wx:key="id" data-id="{{item.id}}" bindtap="goDetail">
     <view class="order-head">
-      <text class="order-no">{{item.orderNo}}</text>
+      <view class="order-mark"></view>
+      <view class="order-title-wrap">
+        <view class="order-title">{{item.categoryName || '其他故障'}}</view>
+        <view class="order-no">工单号 {{item.orderNo}}</view>
+      </view>
       <view class="head-right">
         <text class="urgent-tag" wx:if="{{item.urgent === 1}}">紧急</text>
-        <text class="tag status-tag" style="background: {{item.statusColor}}1a; color: {{item.statusColor}};">{{item.statusText}}</text>
+        <text class="tag" style="background: {{item.statusColor}}1a; color: {{item.statusColor}};">{{item.statusText}}</text>
       </view>
     </view>
-    <view class="order-row">
-      <text class="row-label">地点</text>
-      <text class="row-value">{{item.locationText}}</text>
+
+    <view class="order-body">
+      <view class="order-row">
+        <text class="row-label">报修地点</text>
+        <text class="row-value">{{item.locationText}}</text>
+      </view>
+      <view class="order-row" wx:if="{{item.descSummary}}">
+        <text class="row-label">故障描述</text>
+        <text class="row-value">{{item.descSummary}}</text>
+      </view>
     </view>
-    <view class="order-row">
-      <text class="row-label">分类</text>
-      <text class="row-value">{{item.categoryName}}</text>
+
+    <view class="order-foot">
+      <text class="order-time">{{item.createTime}}</text>
+      <text class="order-link">查看详情 ›</text>
     </view>
-    <view class="order-row" wx:if="{{item.descSummary}}">
-      <text class="row-label">描述</text>
-      <text class="row-value">{{item.descSummary}}</text>
-    </view>
-    <view class="order-foot">{{item.createTime}}</view>
   </view>
 
   <!-- 空状态 / 加载提示 -->
-  <view class="empty" wx:if="{{list.length === 0 && !loading}}">暂无工单，快去报修吧</view>
+  <view class="empty-state" wx:if="{{list.length === 0 && !loading}}">
+    <view class="empty-icon">≡</view>
+    <view class="empty-text">暂无工单，快去报修吧</view>
+    <view class="empty-btn" bindtap="goSubmit">去报修</view>
+  </view>
   <view class="loading-text" wx:if="{{loading}}">加载中…</view>
   <view class="loading-text" wx:elif="{{list.length > 0 && !hasMore}}">没有更多了</view>
 </view>

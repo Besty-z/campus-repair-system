@@ -6,6 +6,8 @@ const BASE_URL = 'http://localhost:8080';
 App({
   globalData: {
     baseUrl: BASE_URL,   // 后端基础地址（接口前缀为 baseUrl + '/api'）
+    // 图片实际地址在 /api 下（后端 context-path 为 /api，图片相对路径为 /uploads/xxx）
+    imageBaseUrl: BASE_URL + '/api',
     token: '',           // 登录令牌（JWT）
     userInfo: null       // 当前登录用户信息 { id, phone, nickname, role }
   },

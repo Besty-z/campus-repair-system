@@ -11,10 +11,11 @@ server:
 spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    # 数据库连接：请按本机 MySQL 实际情况修改用户名/密码
-    url: jdbc:mysql://localhost:3306/campus_repair?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false
-    username: root
-    password: 123456
+    # 数据库连接：账号密码通过环境变量注入，避免把本机真实密码写进代码
+    # 未设置环境变量时使用冒号后的默认值（本机密码不是 123456 时，请设置 MYSQL_PASSWORD）
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${MYSQL_DB:campus_repair}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false
+    username: ${MYSQL_USERNAME:root}
+    password: ${MYSQL_PASSWORD:123456}
   servlet:
     multipart:
       # 文件上传限制：单文件与单请求均不超过 5MB

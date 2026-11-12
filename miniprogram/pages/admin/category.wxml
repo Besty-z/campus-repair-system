@@ -2,12 +2,17 @@
 <view class="category-page">
   <!-- 宿舍楼内分类 -->
   <view class="card">
-    <view class="section-title">宿舍楼内</view>
+    <view class="section-head">
+      <text class="section-title">宿舍楼内</text>
+      <text class="section-tip">共 {{dormCategories.length}} 项</text>
+    </view>
     <view class="cat-row" wx:for="{{dormCategories}}" wx:key="id">
       <view class="cat-info">
         <text class="cat-name {{item.status === 0 ? 'cat-disabled' : ''}}">{{item.name}}</text>
-        <text class="cat-sort">排序 {{item.sort}}</text>
-        <text class="cat-off" wx:if="{{item.status === 0}}">已停用</text>
+        <view class="cat-meta">
+          <text class="cat-sort">排序 {{item.sort}}</text>
+          <text class="cat-off" wx:if="{{item.status === 0}}">已停用</text>
+        </view>
       </view>
       <view class="cat-actions">
         <button class="cat-btn" size="mini" data-item="{{item}}" bindtap="showEdit">编辑</button>
@@ -19,12 +24,17 @@
 
   <!-- 公共区域分类 -->
   <view class="card">
-    <view class="section-title">校园公共区域</view>
+    <view class="section-head">
+      <text class="section-title">校园公共区域</text>
+      <text class="section-tip">共 {{publicCategories.length}} 项</text>
+    </view>
     <view class="cat-row" wx:for="{{publicCategories}}" wx:key="id">
       <view class="cat-info">
         <text class="cat-name {{item.status === 0 ? 'cat-disabled' : ''}}">{{item.name}}</text>
-        <text class="cat-sort">排序 {{item.sort}}</text>
-        <text class="cat-off" wx:if="{{item.status === 0}}">已停用</text>
+        <view class="cat-meta">
+          <text class="cat-sort">排序 {{item.sort}}</text>
+          <text class="cat-off" wx:if="{{item.status === 0}}">已停用</text>
+        </view>
       </view>
       <view class="cat-actions">
         <button class="cat-btn" size="mini" data-item="{{item}}" bindtap="showEdit">编辑</button>
@@ -48,7 +58,7 @@
       <view class="form-item">
         <text class="form-label">归属地点类型</text>
         <picker range="{{locationTypeLabels}}" value="{{formLocationTypeIndex}}" bindchange="onFormLocationTypeChange">
-          <view class="form-input">{{locationTypeLabels[formLocationTypeIndex]}} ▾</view>
+          <view class="picker-row">{{locationTypeLabels[formLocationTypeIndex]}}<text class="picker-arrow">›</text></view>
         </picker>
       </view>
       <view class="form-item">

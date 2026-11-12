@@ -193,6 +193,50 @@ class RepairOrderServiceImplTest {
     }
 
     /**
+     * 未选择具体分类但填写了自定义故障类型时，应创建成功且分类名称为自定义值。
+     */
+    @Test
+    void create_withCustomCategory_success() {
+        UserContext.set(1L, Constants.ROLE_USER);
+        when(sysUserMapper.selectById(1L)).thenReturn(normalUser(1L));
+        when(repairOrderMapper.selectCount(any(LambdaQueryWrapper.class))).thenReturn(0L);
+
+        OrderCreateDTO dto = baseCreateDTO();
+        dto.setCategoryId(null);
+        dto.setCustomCategory("水管爆裂");
+
+        OrderVO vo = repairOrderService.create(1L, dto);
+
+        ArgumentCaptor<RepairOrder> captor = ArgumentCaptor.forClass(RepairOrder.class);
+        verify(repairOrderMapper).insert(captor.capture());
+        RepairOrder saved = captor.getValue();
+        // 选择“其他”时不关联具体分类，仅保存自定义故障类型
+        assertNull(saved.getCategoryId());
+        assertEquals("水管爆裂", saved.getCustomCategory());
+        assertEquals("水管爆裂", vo.getCategoryName());
+        verify(faultCategoryMapper, never()).selectById(anyLong());
+    }
+
+    /**
+     * 既未选择分类也未填写自定义故障类型时，应抛出业务异常。
+     */
+    @Test
+    void create_withoutCategoryAndCustomCategory_throws() {
+        UserContext.set(1L, Constants.ROLE_USER);
+        when(sysUserMapper.selectById(1L)).thenReturn(normalUser(1L));
+
+        OrderCreateDTO dto = baseCreateDTO();
+        dto.setCategoryId(null);
+        dto.setCustomCategory("   ");
+
+        BizException ex = assertThrows(BizException.class,
+                () -> repairOrderService.create(1L, dto));
+        assertEquals(ResultCode.BAD_REQUEST, ex.getCode());
+        assertEquals("请选择故障分类，或选择“其他”并填写故障类型", ex.getMessage());
+        verify(repairOrderMapper, never()).insert(any(RepairOrder.class));
+    }
+
+    /**
      * 会员用户上传超过 5 张图片应被拒绝。
      */
     @Test

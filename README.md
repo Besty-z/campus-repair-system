@@ -50,22 +50,57 @@ campus-repair-system/
 
 ### 1. 准备数据库
 
-安装并启动 MySQL 8.0+，执行建表脚本：
+安装并启动 MySQL 8.0+，执行建表脚本。
 
-```bash
-mysql -u root -p < sql/schema.sql
+**PowerShell（Windows 推荐，支持会提示输入密码）：**
+
+```powershell
+mysql --default-character-set=utf8mb4 -u root -p -e "source sql/schema.sql"
 ```
+
+**CMD：**
+
+```cmd
+mysql --default-character-set=utf8mb4 -u root -p < sql/schema.sql
+```
+
+> 说明：PowerShell 不支持 `<` 重定向符号，直接输 `mysql -u root -p < sql/schema.sql` 会报「< 运算符是为将来使用而保留的」，请使用上面的 `source` 写法，或先切到 `cmd` 再执行。
+>
+> 必须带上 `--default-character-set=utf8mb4`，否则 Windows 客户端可能用 GBK/latin1 解析脚本中的中文，出现 `ERROR 1406 Data too long for column 'nickname'` 之类的报错。
+>
+> 若提示 `Access denied for user 'root'`，说明本机 MySQL 密码不是 `123456`：执行时按提示输入你自己的 root 密码即可，同时把 `backend/src/main/resources/application.yml` 中的 `password` 改成同一个值。
 
 脚本会自动创建数据库 `campus_repair`、全部数据表、12 个预置故障分类，并预置一个管理员账号（手机号 `13800000000`）。
 
 ### 2. 启动后端（端口 8080）
 
-修改 `backend/src/main/resources/application.yml` 中的数据库账号密码（默认 root/123456），然后：
+数据库账号密码通过**环境变量**注入（配置项在 `backend/src/main/resources/application.yml`）：
 
-```bash
+| 环境变量 | 默认值 | 说明 |
+|---|---|---|
+| `MYSQL_HOST` | localhost | 数据库地址 |
+| `MYSQL_PORT` | 3306 | 数据库端口 |
+| `MYSQL_DB` | campus_repair | 数据库名 |
+| `MYSQL_USERNAME` | root | 用户名 |
+| `MYSQL_PASSWORD` | 123456 | 密码 |
+
+本机密码不是 `123456` 时，启动前设置环境变量即可，**不用改代码**：
+
+```powershell
+# PowerShell（当前窗口有效）
+$env:MYSQL_PASSWORD = "你的root密码"
 cd backend
 mvn spring-boot:run
 ```
+
+```cmd
+:: CMD（当前窗口有效）
+set MYSQL_PASSWORD=你的root密码
+cd backend
+mvn spring-boot:run
+```
+
+> IDEA 中运行：`Run → Edit Configurations → Environment variables` 填 `MYSQL_PASSWORD=你的root密码`；永久生效可用 `setx MYSQL_PASSWORD "你的密码"`（新开窗口后生效）。
 
 > **课程演示说明**：本系统采用**模拟短信验证码**，不接入真实短信服务。点击「获取验证码」后，验证码会打印在后端控制台日志中（`模拟发送短信验证码: 手机号=xxx, 验证码=xxx`），直接查看控制台即可登录。
 
@@ -88,6 +123,7 @@ npm run dev
 ## 四、核心功能清单
 
 ### 微信小程序端
+- 首页：品牌渐变头部、轮播提示、快捷入口、报修流程、最近工单与会员权益引导
 - 手机号注册、验证码登录
 - 普通用户：提交报修（限 1 张图、无预约时间）、查看本人工单（待接单/维修中/已完成/驳回）、查看故障图片
 - 会员用户：最多 5 张图、自选预约上门时间、紧急标记、个人报修统计
@@ -95,6 +131,7 @@ npm run dev
 
 ### Vue 网页后台
 - 同一登录入口，按角色渲染不同菜单
+- 工作台首页：欢迎横幅、工单状态统计磁贴、最近工单与快捷入口
 - 普通用户：提交报修（遵循免费版限制）、查看本人工单与故障照片
 - 会员：会员全部权限 + ECharts 报修统计图表
 - 管理员：用户管理（开通/取消会员）、工单管理（分页查询、接单、状态流转、维修备注、图片预览、紧急优先）、故障分类增删改
@@ -108,13 +145,14 @@ npm run dev
 5. **故障分类动态化**：分类存于数据库，管理员可随时新增/编辑/删除；已被工单引用的分类执行逻辑删除（停用），保证历史工单数据完整性。
 6. **图片存储**：采用课程作业简易方案——图片上传到后端本地 `uploads/` 目录，通过静态资源映射访问，数据库只存相对路径。
 7. **安全细节**：接口参数用 Bean Validation 校验；SQL 全部走 MyBatis-Plus 参数绑定，无注入风险；统一异常处理返回友好中文提示。
+8. **界面设计**：网页端与小程序统一采用一套设计语言——品牌渐变（`#2c6bf2 → #17bfd4`）、深色侧边栏、大圆角卡片、胶囊状态标签与柔和投影；状态色固定为待接单琥珀 `#f5a524`、维修中品牌蓝 `#2c6bf2`、已完成薄荷绿 `#0fb583`、驳回红 `#ef4b4b`。网页端全局样式集中在 `frontend/src/styles/theme.css`，小程序全局样式集中在 `miniprogram/app.wxss`。
 
 ## 六、测试
 
 后端核心业务（会员/普通用户权限差异、工单状态机、分类逻辑删除）配有 JUnit 5 + Mockito 单元测试：
 
 ```bash
-cd server
+cd backend
 mvn test
 ```
 

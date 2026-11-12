@@ -37,8 +37,11 @@ public class RepairOrder {
     /** 公共区域具体位置（PUBLIC 时填写） */
     private String publicLocation;
 
-    /** 故障分类ID */
+    /** 故障分类ID（选择其他自定义类型时为 null） */
     private Long categoryId;
+
+    /** 自定义故障类型（用户选择“其他”时填写） */
+    private String customCategory;
 
     /** 故障文字描述 */
     private String description;
@@ -218,6 +221,24 @@ public class RepairOrder {
      */
     public void setCategoryId(Long categoryId) {
         this.categoryId = categoryId;
+    }
+
+    /**
+     * 获取自定义故障类型。
+     *
+     * @return 自定义故障类型（用户选择“其他”时填写）
+     */
+    public String getCustomCategory() {
+        return customCategory;
+    }
+
+    /**
+     * 设置自定义故障类型。
+     *
+     * @param customCategory 自定义故障类型（用户选择“其他”时填写）
+     */
+    public void setCustomCategory(String customCategory) {
+        this.customCategory = customCategory;
     }
 
     /**

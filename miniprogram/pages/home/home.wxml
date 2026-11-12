@@ -1,0 +1,121 @@
+<!-- 首页：品牌头部 + 轮播 + 快捷入口 + 报修流程 + 最近工单 + 会员权益 -->
+<view class="home-page">
+  <!-- 顶部渐变区 -->
+  <view class="hero">
+    <view class="hero-deco hero-deco-a"></view>
+    <view class="hero-deco hero-deco-b"></view>
+
+    <view class="hero-top">
+      <view class="hero-user">
+        <view class="hero-greeting">{{greeting}}，{{userInfo ? (userInfo.nickname || '同学') : '同学'}}</view>
+        <view class="hero-sub">校园报修 · 一键提交 · 进度可查</view>
+      </view>
+      <view class="hero-role" wx:if="{{userInfo}}">{{roleText}}</view>
+      <view class="hero-login" wx:else bindtap="goLogin">登录</view>
+    </view>
+
+    <swiper class="banner" indicator-dots autoplay circular interval="4000" duration="400"
+            indicator-color="rgba(255,255,255,0.45)" indicator-active-color="#ffffff">
+      <swiper-item wx:for="{{banners}}" wx:key="index">
+        <view class="banner-item banner-{{index}}">
+          <view class="banner-tag">{{item.tag}}</view>
+          <view class="banner-title">{{item.title}}</view>
+          <view class="banner-desc">{{item.desc}}</view>
+          <view class="banner-circle banner-circle-a"></view>
+          <view class="banner-circle banner-circle-b"></view>
+        </view>
+      </swiper-item>
+    </swiper>
+  </view>
+
+  <!-- 快捷入口 -->
+  <view class="quick-card card">
+    <view class="quick-item" bindtap="goSubmit">
+      <view class="quick-icon quick-icon-blue">+</view>
+      <view class="quick-name">我要报修</view>
+      <view class="quick-desc">提交故障信息</view>
+    </view>
+    <view class="quick-item" bindtap="goOrders">
+      <view class="quick-icon quick-icon-orange">≡</view>
+      <view class="quick-name">我的工单</view>
+      <view class="quick-desc">查看维修进度</view>
+    </view>
+    <view class="quick-item" wx:if="{{isVip}}" bindtap="goStats">
+      <view class="quick-icon quick-icon-gold">◎</view>
+      <view class="quick-name">报修统计</view>
+      <view class="quick-desc">会员数据概览</view>
+    </view>
+    <view class="quick-item" wx:if="{{isAdmin}}" bindtap="goAdmin">
+      <view class="quick-icon quick-icon-green">⚙</view>
+      <view class="quick-name">管理后台</view>
+      <view class="quick-desc">工单与用户管理</view>
+    </view>
+  </view>
+
+  <!-- 报修流程 -->
+  <view class="card">
+    <view class="section-head">
+      <text class="section-title">报修流程</text>
+      <text class="section-tip">全程可查</text>
+    </view>
+    <view class="steps">
+      <view class="step">
+        <view class="step-dot">1</view>
+        <view class="step-name">提交报修</view>
+        <view class="step-desc">填写故障信息</view>
+      </view>
+      <view class="step-line"></view>
+      <view class="step">
+        <view class="step-dot">2</view>
+        <view class="step-name">等待接单</view>
+        <view class="step-desc">管理员受理</view>
+      </view>
+      <view class="step-line"></view>
+      <view class="step">
+        <view class="step-dot">3</view>
+        <view class="step-name">上门维修</view>
+        <view class="step-desc">处理故障</view>
+      </view>
+      <view class="step-line"></view>
+      <view class="step">
+        <view class="step-dot">4</view>
+        <view class="step-name">完成工单</view>
+        <view class="step-desc">查看维修备注</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 最近工单 -->
+  <view class="card" wx:if="{{userInfo}}">
+    <view class="section-head">
+      <text class="section-title">最近工单</text>
+      <text class="section-more" bindtap="goOrders">全部 ›</text>
+    </view>
+    <view wx:for="{{recentOrders}}" wx:key="id" class="recent-item"
+          data-id="{{item.id}}" bindtap="goDetail">
+      <view class="recent-mark" style="background: {{item.statusColor}};"></view>
+      <view class="recent-main">
+        <view class="recent-title">{{item.categoryName || '其他故障'}}</view>
+        <view class="recent-loc">{{item.locationText}}</view>
+      </view>
+      <view class="recent-right">
+        <view class="tag" style="background: {{item.statusColor}}1a; color: {{item.statusColor}};">{{item.statusText}}</view>
+        <view class="recent-time">{{item.createTime}}</view>
+      </view>
+    </view>
+    <view class="empty-small" wx:if="{{!loading && recentOrders.length === 0}}">
+      暂无工单，点击「我要报修」开始
+    </view>
+  </view>
+
+  <!-- 会员权益 -->
+  <view class="card member-card" wx:if="{{userInfo && !isVip}}">
+    <view class="member-head">
+      <text class="member-title">会员专享</text>
+      <text class="member-badge">VIP</text>
+    </view>
+    <view class="member-desc">最多上传 5 张图片 · 自选上门时间 · 紧急工单优先处理</view>
+  </view>
+
+  <view class="home-footer">校园报修预约系统 · 让每一次报修都被看见</view>
+</view>

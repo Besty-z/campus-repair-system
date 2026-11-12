@@ -36,7 +36,8 @@ Page({
       .then((page) => {
         const records = (page.records || []).map((u) => Object.assign({}, u, {
           roleText: util.roleText(u.role),
-          roleColor: util.roleColor(u.role)
+          roleColor: util.roleColor(u.role),
+          avatarText: (u.nickname || '用').slice(0, 1)
         }));
         const list = this.data.pageNum === 1 ? records : this.data.list.concat(records);
         this.setData({

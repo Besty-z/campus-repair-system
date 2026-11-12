@@ -13,5 +13,8 @@ backend/uploads/
 .DS_Store
 Thumbs.db
 
+# 微信开发者工具的个人本地配置
+project.private.config.json
+
 # 日志
 *.log

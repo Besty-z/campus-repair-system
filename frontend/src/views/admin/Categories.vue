@@ -1,77 +1,123 @@
 <template>
-  <el-card>
-    <template #header>
-      <div class="card-header">
-        <span>故障分类管理</span>
-        <el-button type="primary" @click="openDialog(null)">新增分类</el-button>
+  <div class="page categories-page">
+    <!-- 顶部统计：两类地点各自的分类数量 -->
+    <div class="stat-grid">
+      <div class="stat-tile is-brand">
+        <div class="stat-tile-label">分类总数</div>
+        <div class="stat-tile-value">{{ allData.length }}</div>
+        <div class="stat-tile-icon"><el-icon><Menu /></el-icon></div>
       </div>
-    </template>
-
-    <!-- 按地点类型分组筛选 -->
-    <el-form inline class="filter-bar">
-      <el-form-item label="地点类型">
-        <el-radio-group v-model="filterLocationType" @change="handleSearch">
-          <el-radio-button value="">全部</el-radio-button>
-          <el-radio-button value="DORM">宿舍楼内</el-radio-button>
-          <el-radio-button value="PUBLIC">校园公共区域</el-radio-button>
-        </el-radio-group>
-      </el-form-item>
-    </el-form>
-
-    <!-- 分类表格 -->
-    <el-table v-loading="loading" :data="pagedData" border stripe>
-      <el-table-column prop="id" label="ID" width="80" align="center" />
-      <el-table-column prop="name" label="分类名称" min-width="160" />
-      <el-table-column label="归属地点类型" width="140" align="center">
-        <template #default="{ row }">
-          <el-tag :type="dictTagType(LOCATION_TYPE_MAP, row.locationType)" size="small">
-            {{ dictLabel(LOCATION_TYPE_MAP, row.locationType) }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column prop="sort" label="排序号" width="90" align="center" />
-      <el-table-column label="状态" width="90" align="center">
-        <template #default="{ row }">
-          <el-tag :type="row.status === 1 ? 'success' : 'info'" size="small">
-            {{ row.status === 1 ? '启用' : '停用' }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column label="操作" width="140" align="center">
-        <template #default="{ row }">
-          <el-button type="primary" link size="small" @click="openDialog(row)">编辑</el-button>
-          <el-button type="danger" link size="small" @click="handleDelete(row)">删除</el-button>
-        </template>
-      </el-table-column>
-      <template #empty>暂无分类数据</template>
-    </el-table>
-
-    <!-- 分页（前端分页，数据量小） -->
-    <div class="pagination">
-      <el-pagination
-        v-model:current-page="pageNum"
-        v-model:page-size="pageSize"
-        :total="filteredData.length"
-        :page-sizes="[10, 20, 50]"
-        layout="total, sizes, prev, pager, next"
-      />
+      <div class="stat-tile is-cyan">
+        <div class="stat-tile-label">宿舍楼内</div>
+        <div class="stat-tile-value">{{ dormCount }}</div>
+        <div class="stat-tile-icon"><el-icon><HomeFilled /></el-icon></div>
+      </div>
+      <div class="stat-tile is-mint">
+        <div class="stat-tile-label">校园公共区域</div>
+        <div class="stat-tile-value">{{ publicCount }}</div>
+        <div class="stat-tile-icon"><el-icon><Location /></el-icon></div>
+      </div>
+      <div class="stat-tile is-amber">
+        <div class="stat-tile-label">已停用</div>
+        <div class="stat-tile-value">{{ disabledCount }}</div>
+        <div class="stat-tile-icon"><el-icon><CircleClose /></el-icon></div>
+      </div>
     </div>
 
+    <section class="panel">
+      <div class="panel-hd">
+        <div class="panel-title">故障分类管理</div>
+        <el-button type="primary" @click="openDialog(null)">+ 新增分类</el-button>
+      </div>
+
+      <!-- 按地点类型筛选：胶囊样式 -->
+      <div class="status-tabs">
+        <button class="status-tab" :class="{ active: filterLocationType === '' }" @click="setFilter('')">
+          全部
+        </button>
+        <button
+          class="status-tab"
+          :class="{ active: filterLocationType === 'DORM' }"
+          @click="setFilter('DORM')"
+        >
+          宿舍楼内
+        </button>
+        <button
+          class="status-tab"
+          :class="{ active: filterLocationType === 'PUBLIC' }"
+          @click="setFilter('PUBLIC')"
+        >
+          校园公共区域
+        </button>
+        <span class="total-hint">共 {{ filteredData.length }} 个分类</span>
+      </div>
+
+      <!-- 分类表格 -->
+      <el-table v-loading="loading" :data="pagedData">
+        <el-table-column prop="id" label="ID" width="70" align="center">
+          <template #default="{ row }"><span class="muted">#{{ row.id }}</span></template>
+        </el-table-column>
+        <el-table-column label="分类名称" min-width="180">
+          <template #default="{ row }">
+            <span class="cat-name">{{ row.name }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="归属地点类型" width="150">
+          <template #default="{ row }">
+            <span class="loc-type" :class="row.locationType === 'DORM' ? 'dorm' : 'public'">
+              {{ dictLabel(LOCATION_TYPE_MAP, row.locationType) }}
+            </span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="sort" label="排序号" width="90" align="center" />
+        <el-table-column label="状态" width="90" align="center">
+          <template #default="{ row }">
+            <span class="status-pill" :class="row.status === 1 ? 'st-finished' : 'st-rejected'">
+              {{ row.status === 1 ? '启用' : '停用' }}
+            </span>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="140" align="center">
+          <template #default="{ row }">
+            <el-button type="primary" link size="small" @click="openDialog(row)">编辑</el-button>
+            <el-button type="danger" link size="small" @click="handleDelete(row)">删除</el-button>
+          </template>
+        </el-table-column>
+        <template #empty>
+          <div class="empty-state">
+            <div class="empty-icon">🗂️</div>
+            暂无分类数据，点击右上角新增
+          </div>
+        </template>
+      </el-table>
+
+      <!-- 分页（前端分页，数据量小） -->
+      <div class="pagination">
+        <el-pagination
+          v-model:current-page="pageNum"
+          v-model:page-size="pageSize"
+          :total="filteredData.length"
+          :page-sizes="[10, 20, 50]"
+          layout="total, sizes, prev, pager, next"
+        />
+      </div>
+    </section>
+
     <!-- 新增 / 编辑弹窗 -->
-    <el-dialog v-model="dialogVisible" :title="isEdit ? '编辑分类' : '新增分类'" width="440px">
-      <el-form ref="formRef" :model="form" :rules="formRules" label-width="100px">
+    <el-dialog v-model="dialogVisible" :title="isEdit ? '编辑分类' : '新增分类'" width="460px">
+      <el-form ref="formRef" :model="form" :rules="formRules" label-position="top">
         <el-form-item label="分类名称" prop="name">
           <el-input v-model="form.name" placeholder="如：网络故障" maxlength="50" />
         </el-form-item>
         <el-form-item label="地点类型" prop="locationType">
-          <el-radio-group v-model="form.locationType">
-            <el-radio value="DORM">宿舍楼内</el-radio>
-            <el-radio value="PUBLIC">校园公共区域</el-radio>
+          <el-radio-group v-model="form.locationType" class="type-cards">
+            <el-radio value="DORM" border>宿舍楼内</el-radio>
+            <el-radio value="PUBLIC" border>校园公共区域</el-radio>
           </el-radio-group>
         </el-form-item>
         <el-form-item label="排序号" prop="sort">
           <el-input-number v-model="form.sort" :min="0" :max="999" />
-          <span class="sort-tip">越小越靠前</span>
+          <span class="sort-tip">数字越小越靠前</span>
         </el-form-item>
         <!-- 编辑时才可调整启停状态 -->
         <el-form-item v-if="isEdit" label="状态">
@@ -89,19 +135,20 @@
         <el-button type="primary" :loading="submitting" @click="handleSubmit">确 定</el-button>
       </template>
     </el-dialog>
-  </el-card>
+  </div>
 </template>
 
 <script setup>
 import { computed, reactive, ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { Menu, HomeFilled, Location, CircleClose } from '@element-plus/icons-vue'
 import {
   listAllCategories,
   createCategory,
   updateCategory,
   deleteCategory
 } from '../../api/category'
-import { LOCATION_TYPE_MAP, dictLabel, dictTagType } from '../../utils/dict'
+import { LOCATION_TYPE_MAP, dictLabel } from '../../utils/dict'
 
 const loading = ref(false)
 const allData = ref([]) // 全量分类（含停用）
@@ -123,6 +170,11 @@ const formRules = {
   name: [{ required: true, message: '请输入分类名称', trigger: 'blur' }],
   locationType: [{ required: true, message: '请选择地点类型', trigger: 'change' }]
 }
+
+// 概览统计：两类地点分类数量 + 停用数量
+const dormCount = computed(() => allData.value.filter((item) => item.locationType === 'DORM').length)
+const publicCount = computed(() => allData.value.filter((item) => item.locationType === 'PUBLIC').length)
+const disabledCount = computed(() => allData.value.filter((item) => item.status !== 1).length)
 
 // 按地点类型筛选后的数据
 const filteredData = computed(() => {
@@ -148,7 +200,8 @@ async function loadData() {
 }
 
 // 切换地点类型筛选时回到第一页
-function handleSearch() {
+function setFilter(value) {
+  filterLocationType.value = value
   pageNum.value = 1
 }
 
@@ -216,20 +269,114 @@ onMounted(loadData)
 </script>
 
 <style scoped>
-.card-header {
+/* 分类筛选胶囊 */
+.status-tabs {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 14px;
 }
 
-.filter-bar {
-  margin-bottom: 8px;
+.status-tab {
+  height: 32px;
+  padding: 0 16px;
+  border: 1px solid #e3eaf5;
+  border-radius: 999px;
+  font-size: 13px;
+  color: #5b6b80;
+  background: #fff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.status-tab:hover {
+  border-color: #bcd0fb;
+  color: #2c6bf2;
+}
+
+.status-tab.active {
+  border-color: transparent;
+  color: #fff;
+  background: linear-gradient(135deg, #2c6bf2 0%, #17bfd4 100%);
+  box-shadow: 0 8px 18px rgba(44, 107, 242, 0.24);
+}
+
+.total-hint {
+  margin-left: auto;
+  font-size: 12px;
+  color: #a9b4c6;
+}
+
+/* 分类名 */
+.cat-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1b2b45;
+}
+
+/* 地点类型标签 */
+.loc-type {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.loc-type.dorm {
+  color: #1b56d0;
+  background: #eef3ff;
+}
+
+.loc-type.public {
+  color: #0a7f5e;
+  background: #e7f8f2;
+}
+
+/* 状态胶囊 */
+.status-pill {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.st-finished {
+  color: #0a7f5e;
+  background: #e7f8f2;
+}
+
+.st-rejected {
+  color: #b03636;
+  background: #fdeeee;
+}
+
+.muted {
+  font-family: 'SF Mono', Consolas, monospace;
+  font-size: 12px;
+  color: #a9b4c6;
 }
 
 .sort-tip {
   margin-left: 12px;
   font-size: 12px;
-  color: #909399;
+  color: #a9b4c6;
+}
+
+/* 弹窗中的地点类型按钮铺满 */
+.type-cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  width: 100%;
+}
+
+.type-cards :deep(.el-radio) {
+  margin: 0;
+  height: 40px;
+  justify-content: center;
 }
 
 .pagination {

@@ -36,12 +36,20 @@ const STATUS_MAP = {
   REJECTED: '驳回'
 };
 
-/** 工单状态颜色映射（标签底色） */
+/** 工单状态颜色映射（标签底色，与网页端设计系统一致） */
 const STATUS_COLOR_MAP = {
-  PENDING: '#ff9500',
-  IN_PROGRESS: '#3b7cff',
-  FINISHED: '#07c160',
-  REJECTED: '#999999'
+  PENDING: '#f5a524',
+  IN_PROGRESS: '#2c6bf2',
+  FINISHED: '#0fb583',
+  REJECTED: '#ef4b4b'
+};
+
+/** 工单状态说明 */
+const STATUS_DESC_MAP = {
+  PENDING: '等待维修管理员接单',
+  IN_PROGRESS: '维修人员正在处理中',
+  FINISHED: '工单已完成，可查看维修备注',
+  REJECTED: '工单已被驳回，请查看驳回原因'
 };
 
 /** 角色中文映射 */
@@ -53,9 +61,9 @@ const ROLE_MAP = {
 
 /** 角色颜色映射：普通用户灰、会员金、管理员蓝 */
 const ROLE_COLOR_MAP = {
-  USER: '#999999',
+  USER: '#7a879b',
   VIP: '#c8a063',
-  ADMIN: '#3b7cff'
+  ADMIN: '#2c6bf2'
 };
 
 /** 地点类型中文映射 */
@@ -80,6 +88,15 @@ function statusText(status) {
  */
 function statusColor(status) {
   return STATUS_COLOR_MAP[status] || '#999999';
+}
+
+/**
+ * 获取工单状态说明
+ * @param {string} status 状态枚举
+ * @returns {string}
+ */
+function statusDesc(status) {
+  return STATUS_DESC_MAP[status] || '';
 }
 
 /**
@@ -120,10 +137,31 @@ function summary(text, len) {
   return text.length > len ? text.slice(0, len) + '…' : text;
 }
 
+/**
+ * 拼接图片完整访问地址
+ * 后端返回的图片相对路径形如 /uploads/2026/11/08/a.jpg，
+ * 由于后端 context-path 为 /api，图片真实地址在 /api 下
+ * @param {string} path 图片相对路径
+ * @returns {string} 完整图片地址（空值返回空串，http 开头的地址原样返回）
+ */
+function imageUrl(path) {
+  if (!path) {
+    return '';
+  }
+  if (path.indexOf('http') === 0) {
+    return path;
+  }
+  const app = getApp();
+  const base = (app && app.globalData && app.globalData.imageBaseUrl) || 'http://localhost:8080/api';
+  return base + path;
+}
+
 module.exports = {
   formatTime,
+  imageUrl,
   statusText,
   statusColor,
+  statusDesc,
   roleText,
   roleColor,
   locationTypeText,

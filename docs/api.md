@@ -85,6 +85,7 @@ Content-Type: `multipart/form-data`，字段名 `file`
   "roomNo": "302",
   "publicLocation": null,
   "categoryId": 1,
+  "customCategory": null,
   "description": "宿舍水龙头漏水",
   "images": ["/uploads/2026/11/08/a.jpg"],
   "urgent": 0,
@@ -93,6 +94,7 @@ Content-Type: `multipart/form-data`，字段名 `file`
 ```
 规则：
 - `locationType=DORM` 时 `buildingNo`、`roomNo` 必填；`PUBLIC` 时 `publicLocation` 必填
+- `categoryId` 可为空；选择「其他（自行填写）」时传 `customCategory`（≤50字），此时 `categoryId` 传 null，工单不再关联具体分类
 - USER：`images` 最多 1 张；`urgent` 强制 0；`appointmentTime` 强制 null
 - VIP：`images` 最多 5 张；`appointmentTime` 格式 `yyyy-MM-dd HH:mm:ss`，必须是将来的时间；`urgent` 可为 1
 - 响应 data：创建成功的工单对象（同 GET 详情结构）
@@ -112,7 +114,7 @@ Content-Type: `multipart/form-data`，字段名 `file`
 ```
 
 ### GET `/orders/admin/page` 工单分页查询（仅 ADMIN）
-参数：`status`、`locationType`、`categoryId`、`keyword`（模糊匹配位置/描述/工单号）、`pageNum`、`pageSize`
+参数：`status`、`locationType`、`categoryId`、`keyword`（模糊匹配位置/描述/工单号/自定义故障类型）、`pageNum`、`pageSize`
 排序：**紧急工单优先（urgent 倒序），再按创建时间倒序**
 
 ### PUT `/orders/admin/{id}/accept` 接单（仅 ADMIN）

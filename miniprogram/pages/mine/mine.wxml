@@ -1,50 +1,95 @@
-<!-- 我的 -->
+<!-- 我的：用户信息 + 角色功能入口 -->
 <view class="mine-page">
-  <!-- 用户信息卡片 -->
-  <view class="user-card" wx:if="{{userInfo}}">
-    <view class="avatar">👤</view>
-    <view class="user-meta">
+  <!-- 用户信息头部 -->
+  <view class="profile-hero" wx:if="{{userInfo}}">
+    <view class="hero-deco-a"></view>
+    <view class="hero-deco-b"></view>
+    <view class="avatar">{{avatarText}}</view>
+    <view class="profile-main">
       <view class="nickname-row">
-        <text class="nickname">{{userInfo.nickname || '未设置昵称'}}</text>
-        <text class="tag role-tag" style="background: {{roleColor}}1a; color: {{roleColor}};">{{roleText}}</text>
+        <text class="nickname">{{userInfo.nickname || '校园用户'}}</text>
+        <text class="role-badge">{{roleText}}</text>
       </view>
       <view class="phone">{{userInfo.phone}}</view>
+      <view class="profile-tip">{{isAdmin ? '管理员账号 · 可处理全部工单' : (isVip ? '会员权益已生效' : '普通用户 · 可提交报修与查询进度')}}</view>
     </view>
   </view>
 
   <!-- 未登录 -->
-  <view class="user-card" wx:else>
-    <view class="avatar">👤</view>
-    <view class="user-meta">
+  <view class="profile-hero guest" wx:else>
+    <view class="hero-deco-a"></view>
+    <view class="avatar">游</view>
+    <view class="profile-main">
       <view class="nickname">未登录</view>
-      <button class="btn-primary login-btn" size="mini" bindtap="goLogin">去登录</button>
+      <view class="profile-tip">登录后可提交报修、查看工单进度</view>
+      <button class="guest-btn" size="mini" bindtap="goLogin">登录 / 注册</button>
     </view>
   </view>
 
-  <!-- VIP 入口 -->
-  <view class="card menu-card" wx:if="{{isVip}}">
-    <view class="menu-item" bindtap="goStats">
-      <text>📊 报修统计</text>
+  <!-- 常用功能 -->
+  <view class="card menu-card">
+    <view class="section-head">
+      <text class="section-title">常用功能</text>
+    </view>
+    <view class="menu-item" bindtap="goSubmit">
+      <view class="menu-icon icon-blue">＋</view>
+      <view class="menu-text">
+        <view class="menu-name">我要报修</view>
+        <view class="menu-desc">提交新的故障报修</view>
+      </view>
+      <text class="menu-arrow">›</text>
+    </view>
+    <view class="menu-item" bindtap="goOrders">
+      <view class="menu-icon icon-orange">≡</view>
+      <view class="menu-text">
+        <view class="menu-name">我的工单</view>
+        <view class="menu-desc">查看报修进度与维修备注</view>
+      </view>
+      <text class="menu-arrow">›</text>
+    </view>
+    <view class="menu-item" bindtap="goStats" wx:if="{{isVip}}">
+      <view class="menu-icon icon-gold">◎</view>
+      <view class="menu-text">
+        <view class="menu-name">报修统计</view>
+        <view class="menu-desc">会员专属数据概览</view>
+      </view>
       <text class="menu-arrow">›</text>
     </view>
   </view>
 
-  <!-- ADMIN 入口 -->
+  <!-- 管理员功能 -->
   <view class="card menu-card" wx:if="{{isAdmin}}">
+    <view class="section-head">
+      <text class="section-title">管理员功能</text>
+    </view>
     <view class="menu-item" bindtap="goAdminOrder">
-      <text>📋 工单管理</text>
+      <view class="menu-icon icon-green">▤</view>
+      <view class="menu-text">
+        <view class="menu-name">工单管理</view>
+        <view class="menu-desc">接单、改状态、填写维修备注</view>
+      </view>
       <text class="menu-arrow">›</text>
     </view>
     <view class="menu-item" bindtap="goAdminCategory">
-      <text>🏷 分类管理</text>
+      <view class="menu-icon icon-purple">◇</view>
+      <view class="menu-text">
+        <view class="menu-name">故障分类管理</view>
+        <view class="menu-desc">维护宿舍与公共区域分类</view>
+      </view>
       <text class="menu-arrow">›</text>
     </view>
     <view class="menu-item" bindtap="goAdminUser">
-      <text>👥 用户管理</text>
+      <view class="menu-icon icon-cyan">○</view>
+      <view class="menu-text">
+        <view class="menu-name">用户管理</view>
+        <view class="menu-desc">开通或取消会员身份</view>
+      </view>
       <text class="menu-arrow">›</text>
     </view>
   </view>
 
   <!-- 退出登录 -->
   <button class="btn-default logout-btn" wx:if="{{userInfo}}" bindtap="logout">退出登录</button>
+
+  <view class="mine-footer">校园报修预约系统 · v1.0</view>
 </view>

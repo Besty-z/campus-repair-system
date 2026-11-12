@@ -86,12 +86,12 @@ Page({
         app.setLogin(data.token, data.user);
         wx.showToast({ title: '登录成功', icon: 'success' });
         setTimeout(() => {
-          // 有上一页则返回，否则切到首页（我要报修）
+          // 有上一页则返回，否则切到首页
           const pages = getCurrentPages();
           if (pages.length > 1) {
             wx.navigateBack();
           } else {
-            wx.switchTab({ url: '/pages/repair/submit' });
+            wx.switchTab({ url: '/pages/home/home' });
           }
         }, 600);
       })

@@ -1,7 +1,6 @@
 package com.campus.repair.dto;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
@@ -33,9 +32,12 @@ public class OrderCreateDTO {
     @Size(max = 200, message = "公共区域位置长度不能超过200个字符")
     private String publicLocation;
 
-    /** 故障分类ID */
-    @NotNull(message = "故障分类不能为空")
+    /** 故障分类ID（可为空：选择“其他”时传 customCategory） */
     private Long categoryId;
+
+    /** 自定义故障类型（用户选择“其他”时填写，最多50字） */
+    @Size(max = 50, message = "自定义故障类型长度不能超过50个字符")
+    private String customCategory;
 
     /** 故障文字描述 */
     @NotBlank(message = "故障描述不能为空")
@@ -145,6 +147,24 @@ public class OrderCreateDTO {
      */
     public void setCategoryId(Long categoryId) {
         this.categoryId = categoryId;
+    }
+
+    /**
+     * 获取自定义故障类型。
+     *
+     * @return 自定义故障类型
+     */
+    public String getCustomCategory() {
+        return customCategory;
+    }
+
+    /**
+     * 设置自定义故障类型。
+     *
+     * @param customCategory 自定义故障类型（用户选择“其他”时填写）
+     */
+    public void setCustomCategory(String customCategory) {
+        this.customCategory = customCategory;
     }
 
     /**

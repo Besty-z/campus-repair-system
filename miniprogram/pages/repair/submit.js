@@ -2,16 +2,21 @@
 const { get, post, uploadFile } = require('../../utils/request');
 const util = require('../../utils/util');
 
+// 「其他（自行填写）」分类哨兵：id 为 null 表示用户自定义故障类型
+const OTHER_CATEGORY = { id: null, name: '其他（自行填写）' };
+
 Page({
   data: {
-    baseUrl: '',               // 图片预览拼接用（onShow 时注入）
+    imgBaseUrl: '',            // 图片完整地址前缀（onShow 时注入，图片实际地址在 /api 下）
     locationTypes: ['宿舍楼内', '校园公共区域'],
     locationTypeIndex: 0,      // 0=DORM 1=PUBLIC
     buildingNo: '',            // 宿舍楼号（DORM）
     roomNo: '',                // 房间号（DORM）
     publicLocation: '',        // 公共区域具体位置（PUBLIC）
-    categories: [],            // 当前地点类型下的分类列表
+    categories: [],            // 当前地点类型下的分类列表（末尾含「其他（自行填写）」）
     categoryIndex: -1,         // 选中的分类下标
+    isOtherCategory: false,    // 是否选择了「其他（自行填写）」
+    customCategory: '',        // 自定义故障类型（选择「其他」时填写）
     description: '',
     images: [],                // 已上传成功的服务端相对路径
     isVip: false,              // 是否会员（控制图片数量、预约时间、紧急开关）
@@ -30,27 +35,36 @@ Page({
       return;
     }
     const userInfo = app.globalData.userInfo || {};
-    this.setData({ isVip: userInfo.role === 'VIP', baseUrl: app.globalData.baseUrl });
+    this.setData({ isVip: userInfo.role === 'VIP', imgBaseUrl: app.globalData.imageBaseUrl });
     this.initAppointmentRange();
     this.loadCategories();
   },
 
-  /** 加载故障分类（按地点类型联动） */
+  /** 加载故障分类（按地点类型联动），末尾追加「其他（自行填写）」 */
   loadCategories() {
     const locationType = this.data.locationTypeIndex === 0 ? 'DORM' : 'PUBLIC';
     get('/api/categories', { locationType }).then((list) => {
-      this.setData({ categories: list || [], categoryIndex: -1 });
+      const categories = (list || []).concat([OTHER_CATEGORY]);
+      this.setData({
+        categories,
+        categoryIndex: -1,
+        isOtherCategory: false,
+        customCategory: ''
+      });
     }).catch(() => {});
   },
 
-  /** 切换地点类型：清空对应字段并重新加载分类 */
+  /** 切换地点类型：清空对应字段、已选分类与自定义输入，并重新加载分类 */
   onLocationTypeChange(e) {
     const idx = Number(e.currentTarget.dataset.value);
     this.setData({
       locationTypeIndex: idx,
       buildingNo: '',
       roomNo: '',
-      publicLocation: ''
+      publicLocation: '',
+      categoryIndex: -1,
+      isOtherCategory: false,
+      customCategory: ''
     });
     this.loadCategories();
   },
@@ -67,8 +81,20 @@ Page({
     this.setData({ publicLocation: e.detail.value });
   },
 
+  /** 分类选择：选中最后一项（「其他（自行填写）」）时展示自定义输入框 */
   onCategoryChange(e) {
-    this.setData({ categoryIndex: Number(e.detail.value) });
+    const idx = Number(e.detail.value);
+    const selected = this.data.categories[idx];
+    const isOtherCategory = !!(selected && selected.id === null);
+    const updates = { categoryIndex: idx, isOtherCategory };
+    if (!isOtherCategory) {
+      updates.customCategory = '';
+    }
+    this.setData(updates);
+  },
+
+  onCustomCategoryInput(e) {
+    this.setData({ customCategory: e.detail.value });
   },
 
   onDescInput(e) {
@@ -162,8 +188,7 @@ Page({
   /** 预览已选图片 */
   previewImage(e) {
     const idx = e.currentTarget.dataset.index;
-    const app = getApp();
-    const urls = this.data.images.map((p) => app.globalData.baseUrl + p);
+    const urls = this.data.images.map((p) => util.imageUrl(p));
     wx.previewImage({ current: urls[idx], urls });
   },
 
@@ -187,17 +212,22 @@ Page({
       wx.showToast({ title: '请选择故障分类', icon: 'none' });
       return;
     }
+    if (d.isOtherCategory && !d.customCategory.trim()) {
+      wx.showToast({ title: '请填写故障类型', icon: 'none' });
+      return;
+    }
     if (!d.description.trim()) {
       wx.showToast({ title: '请填写故障描述', icon: 'none' });
       return;
     }
-    // 组装请求体（USER 的 urgent/appointmentTime 强制为默认，后端也会强制校验）
+    // 选择「其他（自行填写）」时 categoryId 传 null，改传 customCategory
     const body = {
       locationType: d.locationTypeIndex === 0 ? 'DORM' : 'PUBLIC',
       buildingNo: d.locationTypeIndex === 0 ? d.buildingNo.trim() : null,
       roomNo: d.locationTypeIndex === 0 ? d.roomNo.trim() : null,
       publicLocation: d.locationTypeIndex === 1 ? d.publicLocation.trim() : null,
-      categoryId: d.categories[d.categoryIndex].id,
+      categoryId: d.isOtherCategory ? null : d.categories[d.categoryIndex].id,
+      customCategory: d.isOtherCategory ? d.customCategory.trim() : null,
       description: d.description.trim(),
       images: d.images,
       urgent: d.isVip && d.urgent ? 1 : 0,
@@ -226,6 +256,8 @@ Page({
       roomNo: '',
       publicLocation: '',
       categoryIndex: -1,
+      isOtherCategory: false,
+      customCategory: '',
       description: '',
       images: [],
       urgent: false,

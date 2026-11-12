@@ -127,5 +127,10 @@ Page({
   goDetail(e) {
     const id = e.currentTarget.dataset.id;
     wx.navigateTo({ url: '/pages/order/detail?id=' + id });
+  },
+
+  /** 空状态：去提交报修 */
+  goSubmit() {
+    wx.switchTab({ url: '/pages/repair/submit' });
   }
 });
