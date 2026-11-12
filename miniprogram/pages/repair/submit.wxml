@@ -128,7 +128,7 @@
     </view>
     <view class="img-grid">
       <view class="img-cell" wx:for="{{images}}" wx:key="index">
-        <image src="{{imgBaseUrl + item}}" mode="aspectFill" data-index="{{index}}" bindtap="previewImage" />
+        <image src="{{imgBaseUrl + item}}" mode="aspectFill" lazy-load data-index="{{index}}" bindtap="previewImage" />
         <view class="img-del" data-index="{{index}}" catchtap="removeImage">×</view>
       </view>
       <view class="img-add" bindtap="chooseImage" wx:if="{{images.length < (isVip ? 5 : 1)}}">

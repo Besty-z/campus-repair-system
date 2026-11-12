@@ -2,6 +2,9 @@
 <view class="mine-page">
   <!-- 用户信息头部 -->
   <view class="profile-hero" wx:if="{{userInfo}}">
+    <!-- 个人卡片背景图 + 深色渐变遮罩，保证昵称与角色徽章可读 -->
+    <image class="profile-hero-bg" src="{{mineHeader}}" mode="aspectFill" lazy-load />
+    <view class="profile-hero-mask"></view>
     <view class="hero-deco-a"></view>
     <view class="hero-deco-b"></view>
     <view class="avatar">{{avatarText}}</view>
@@ -21,6 +24,8 @@
 
   <!-- 未登录 -->
   <view class="profile-hero guest" wx:else>
+    <image class="profile-hero-bg" src="{{mineHeader}}" mode="aspectFill" lazy-load />
+    <view class="profile-hero-mask"></view>
     <view class="hero-deco-a"></view>
     <view class="avatar">游</view>
     <view class="profile-main">

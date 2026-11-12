@@ -2,9 +2,11 @@
 const { get } = require('../../utils/request');
 const util = require('../../utils/util');
 const role = require('../../utils/role');
+const images = require('../../utils/images');
 
 Page({
   data: {
+    mineHeader: images.MINE_HEADER, // 个人卡片背景图
     userInfo: null,      // 当前用户信息
     avatarText: '用',    // 头像文字（昵称首字）
     roleText: '',        // 角色中文

@@ -2,6 +2,9 @@
 <!-- 课程演示提示：预置管理员手机号 13800000000，验证码查看后端控制台日志 -->
 <view class="login-page">
   <view class="login-hero">
+    <!-- 品牌区样板背景图 + 深蓝渐变遮罩，保证文字可读 -->
+    <image class="hero-bg" src="{{loginBg}}" mode="aspectFill" lazy-load />
+    <view class="hero-mask"></view>
     <view class="hero-circle hero-circle-a"></view>
     <view class="hero-circle hero-circle-b"></view>
     <view class="hero-deco-line"></view>

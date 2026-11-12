@@ -1,10 +1,12 @@
 // 维修工管理（仅 ADMIN）：搜索 + 分页列表 + 新增/编辑 + 开通/停用
 const { get, post, put } = require('../../utils/request');
+const images = require('../../utils/images');
 
 const PAGE_SIZE = 10;
 
 Page({
   data: {
+    workerAvatar: images.WORKER_AVATAR, // 维修工头像样板图
     keyword: '',
     list: [],
     pageNum: 1,
@@ -107,6 +109,12 @@ Page({
       avgRatingText: worker.avgRating == null ? '暂无' : Number(worker.avgRating).toFixed(1),
       catNames: worker.categoryNames || []
     });
+  },
+
+  /** 头像加载失败：该行回退为姓名首字 */
+  onAvatarError(e) {
+    const index = e.currentTarget.dataset.index;
+    this.setData({ ['list[' + index + '].avatarFailed']: true });
   },
 
   onKeywordInput(e) {

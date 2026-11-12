@@ -104,7 +104,12 @@
 
         <template #empty>
           <div class="empty-state">
-            <div class="empty-icon">🛠️</div>
+            <img
+              class="empty-image"
+              :src="EMPTY_IMAGE"
+              alt="暂无工单插图"
+              loading="lazy"
+            />
             暂无工单，快去提交报修吧
           </div>
         </template>
@@ -171,6 +176,7 @@ import { reactive, ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { getMyOrders, rateOrder } from '../../api/order'
 import { STATUS_MAP, STATUS_OPTIONS, dictLabel, formatLocation } from '../../utils/dict'
+import { EMPTY_IMAGE } from '../../utils/images'
 import DetailDialog from './DetailDialog.vue'
 
 const loading = ref(false)
@@ -468,5 +474,16 @@ onMounted(loadData)
   margin-bottom: 16px;
   border-radius: 12px;
   background: #f8fafd;
+}
+
+/* 空状态插图：居中缩略图，圆角 + 柔和阴影 */
+.empty-image {
+  display: block;
+  width: 120px;
+  height: 120px;
+  margin: 0 auto 12px;
+  border-radius: 12px;
+  object-fit: cover;
+  box-shadow: 0 8px 20px rgba(18, 41, 74, 0.08);
 }
 </style>

@@ -146,21 +146,27 @@
   border-radius: 26rpx;
   overflow: hidden;
   box-sizing: border-box;
+  background: #1b47b8;
 }
 
-.banner-0 {
-  background: linear-gradient(135deg, #2c6bf2, #4f9ff5);
+/* banner 背景图铺满 */
+.banner-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
 }
 
-.banner-1 {
-  background: linear-gradient(135deg, #f5a524, #f8cf74);
-}
-
-.banner-2 {
-  background: linear-gradient(135deg, #0fb583, #4dd9ae);
+/* 半透明深色遮罩：保证标签、标题、描述可读 */
+.banner-mask {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, rgba(10, 23, 40, 0.62) 0%, rgba(10, 23, 40, 0.28) 100%);
 }
 
 .banner-tag {
+  position: relative;
+  z-index: 2;
   display: inline-block;
   padding: 5rpx 16rpx;
   font-size: 20rpx;
@@ -170,6 +176,8 @@
 }
 
 .banner-title {
+  position: relative;
+  z-index: 2;
   margin-top: 16rpx;
   font-size: 36rpx;
   font-weight: 700;
@@ -177,6 +185,8 @@
 }
 
 .banner-desc {
+  position: relative;
+  z-index: 2;
   margin-top: 10rpx;
   font-size: 24rpx;
   color: rgba(255, 255, 255, 0.88);
@@ -512,6 +522,15 @@
   text-align: center;
   font-size: 24rpx;
   color: var(--muted);
+}
+
+/* 最近工单空态插图 */
+.empty-small-img {
+  display: block;
+  width: 240rpx;
+  height: 240rpx;
+  margin: 0 auto 20rpx;
+  border-radius: 24rpx;
 }
 
 /* ===== 会员权益 ===== */

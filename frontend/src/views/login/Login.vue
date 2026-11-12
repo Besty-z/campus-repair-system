@@ -1,7 +1,7 @@
 <template>
   <div class="login-page">
-    <!-- 左侧品牌区：渐变背景 + 装饰圆 + 产品卖点 -->
-    <section class="brand-side">
+    <!-- 左侧品牌区：实景背景图 + 深蓝渐变遮罩 + 装饰圆 + 产品卖点 -->
+    <section class="brand-side" :style="{ '--login-bg': `url(${LOGIN_BG})` }">
       <div class="brand-deco brand-deco-a" />
       <div class="brand-deco brand-deco-b" />
       <div class="brand-deco brand-deco-c" />
@@ -158,6 +158,7 @@ import { ElMessage } from 'element-plus'
 import { sendCode, login, register } from '../../api/auth'
 import { useUserStore } from '../../store/user'
 import { ROLE_MAP } from '../../utils/dict'
+import { LOGIN_BG } from '../../utils/images'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -282,7 +283,17 @@ async function handleRegister() {
   justify-content: space-between;
   overflow: hidden;
   color: #fff;
-  background: linear-gradient(150deg, #173a7a 0%, #2c6bf2 55%, #17bfd4 120%);
+  /* 底层铺实景图，上层叠加较薄的深蓝渐变，既保证文字可读又能看清照片 */
+  background-image: linear-gradient(
+      135deg,
+      rgba(16, 41, 74, 0.78),
+      rgba(44, 107, 242, 0.45),
+      rgba(23, 140, 170, 0.4)
+    ),
+    var(--login-bg, none);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
 /* 背景装饰圆，制造柔和层次 */

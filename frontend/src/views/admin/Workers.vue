@@ -29,7 +29,16 @@
         <el-table-column label="维修工" width="150">
           <template #default="{ row }">
             <div class="worker-cell">
-              <span class="worker-avatar">{{ (row.name || '维').slice(0, 1) }}</span>
+              <!-- 圆形头像：按行记录加载失败，失败时回退为首字方块 -->
+              <img
+                v-if="!avatarFailed[row.id]"
+                class="worker-avatar-img"
+                :src="WORKER_AVATAR"
+                :alt="`${row.name || '维修工'}头像`"
+                loading="lazy"
+                @error="avatarFailed[row.id] = true"
+              />
+              <span v-else class="worker-avatar">{{ (row.name || '维').slice(0, 1) }}</span>
               <strong class="worker-name">{{ row.name }}</strong>
             </div>
           </template>
@@ -174,10 +183,13 @@ import { nextTick, reactive, ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getWorkerPage, createWorker, updateWorker } from '../../api/worker'
 import { listCategories } from '../../api/category'
+import { WORKER_AVATAR } from '../../utils/images'
 
 const loading = ref(false)
 const tableData = ref([])
 const total = ref(0)
+// 头像加载失败标记：key 为维修工 id，失败后回退为首字方块
+const avatarFailed = reactive({})
 
 // 查询参数：关键词 + 分页
 const query = reactive({
@@ -343,6 +355,16 @@ onMounted(async () => {
   font-weight: 700;
   color: #fff;
   background: linear-gradient(135deg, #3fd0a2, #0fb583);
+}
+
+/* 维修工圆形头像：与首字方块同尺寸，圆形 + 柔和阴影 */
+.worker-avatar-img {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  object-fit: cover;
+  box-shadow: 0 4px 10px rgba(18, 41, 74, 0.12);
 }
 
 .worker-name {

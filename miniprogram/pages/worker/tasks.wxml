@@ -53,7 +53,7 @@
 
   <!-- 空状态 / 加载提示 -->
   <view class="empty-state" wx:if="{{list.length === 0 && !loading}}">
-    <view class="empty-icon">≡</view>
+    <image class="empty-img" src="{{emptyImage}}" mode="aspectFill" lazy-load />
     <view class="empty-text">暂无任务，去抢单大厅看看</view>
     <view class="empty-btn" bindtap="goPool">去抢单</view>
   </view>

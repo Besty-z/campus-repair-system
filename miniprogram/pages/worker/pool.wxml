@@ -45,7 +45,7 @@
 
   <!-- 空状态 / 加载提示 -->
   <view class="empty-state" wx:if="{{list.length === 0 && !loading}}">
-    <view class="empty-icon">◎</view>
+    <image class="empty-img" src="{{emptyImage}}" mode="aspectFill" lazy-load />
     <view class="empty-text">暂无待接单工单，稍后再来看看</view>
   </view>
   <view class="loading-text" wx:if="{{loading}}">加载中…</view>

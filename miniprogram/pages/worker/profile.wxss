@@ -43,6 +43,17 @@
   align-items: center;
 }
 
+/* 圆形头像：样板图 */
+.hero-avatar-img {
+  width: 120rpx;
+  height: 120rpx;
+  flex-shrink: 0;
+  margin-right: 24rpx;
+  border-radius: 50%;
+  border: 2rpx solid rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.24);
+}
+
 .hero-avatar {
   width: 108rpx;
   height: 108rpx;

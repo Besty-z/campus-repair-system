@@ -21,7 +21,7 @@
             indicator-color="rgba(255,255,255,0.4)" indicator-active-color="#ffffff">
       <swiper-item wx:for="{{ads}}" wx:key="id">
         <view class="ad-item" bindtap="goSubmit">
-          <image class="ad-img" src="{{item.imageUrl}}" mode="aspectFill" />
+          <image class="ad-img" src="{{item.imageUrl}}" mode="aspectFill" lazy-load />
           <view class="ad-mask"></view>
           <view class="ad-info">
             <view class="ad-title">{{item.title}}</view>
@@ -36,6 +36,9 @@
             indicator-color="rgba(255,255,255,0.45)" indicator-active-color="#ffffff">
       <swiper-item wx:for="{{banners}}" wx:key="index">
         <view class="banner-item banner-{{index}}">
+          <!-- 每条 banner 使用样板图片铺满，并叠加半透明遮罩保证文字可读 -->
+          <image class="banner-bg" src="{{item.img}}" mode="aspectFill" lazy-load />
+          <view class="banner-mask"></view>
           <view class="banner-tag">{{item.tag}}</view>
           <view class="banner-title">{{item.title}}</view>
           <view class="banner-desc">{{item.desc}}</view>
@@ -103,7 +106,7 @@
       <view class="service-card" wx:for="{{services}}" wx:key="id"
             data-id="{{item.id}}" bindtap="goService" hover-class="service-card-hover">
         <view class="service-thumb">
-          <image wx:if="{{item.imageUrl}}" class="service-img" src="{{item.imageUrl}}" mode="aspectFill" />
+          <image wx:if="{{item.imageUrl}}" class="service-img" src="{{item.imageUrl}}" mode="aspectFill" lazy-load />
           <view wx:else class="service-img service-img-fallback">{{item.initial}}</view>
           <view class="service-off" wx:if="{{item.hasPrice}}">8折</view>
         </view>
@@ -171,7 +174,8 @@
       </view>
     </view>
     <view class="empty-small" wx:if="{{!loading && recentOrders.length === 0}}">
-      {{isWorker ? '暂无任务，点击「抢单大厅」接取工单' : '暂无工单，点击「我要报修」开始'}}
+      <image class="empty-small-img" src="{{emptyImage}}" mode="aspectFill" lazy-load />
+      <view>{{isWorker ? '暂无任务，点击「抢单大厅」接取工单' : '暂无工单，点击「我要报修」开始'}}</view>
     </view>
   </view>
 

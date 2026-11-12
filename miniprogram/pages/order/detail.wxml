@@ -89,16 +89,17 @@
     <view class="rate-comment rate-empty" wx:else>未填写文字评价</view>
   </view>
 
-  <!-- 故障图片九宫格 -->
-  <view class="card" wx:if="{{imageUrls.length > 0}}">
+  <!-- 故障图片九宫格：无照片时展示样板占位图 -->
+  <view class="card">
     <view class="section-head">
       <text class="section-title">故障图片</text>
-      <text class="section-tip">共 {{imageUrls.length}} 张</text>
+      <text class="section-tip" wx:if="{{imageUrls.length > 0}}">共 {{imageUrls.length}} 张</text>
     </view>
-    <view class="img-grid">
-      <image wx:for="{{imageUrls}}" wx:key="index" src="{{item}}" mode="aspectFill"
+    <view class="img-grid" wx:if="{{imageUrls.length > 0}}">
+      <image wx:for="{{imageUrls}}" wx:key="index" src="{{item}}" mode="aspectFill" lazy-load
              class="grid-img" data-index="{{index}}" bindtap="previewImage" />
     </view>
+    <image wx:else class="empty-img" src="{{emptyImage}}" mode="aspectFill" lazy-load />
   </view>
 
   <!-- 维修备注 -->

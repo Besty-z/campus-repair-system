@@ -1,9 +1,11 @@
 // 工单详情页：USER/VIP 看本人工单，ADMIN 可看任意工单（后端控制权限）
 const { get, post } = require('../../utils/request');
 const util = require('../../utils/util');
+const images = require('../../utils/images');
 
 Page({
   data: {
+    emptyImage: images.EMPTY_IMAGE, // 无故障照片时的占位图
     id: null,
     order: null,       // 工单详情（已附加中文/颜色字段）
     steps: [],         // 维修进度时间线

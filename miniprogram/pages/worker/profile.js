@@ -1,9 +1,12 @@
 // 维修工「我的资料」：身份信息 + 数据统计 + 简介与擅长分类编辑
 const { get, put } = require('../../utils/request');
+const images = require('../../utils/images');
 
 Page({
   data: {
     worker: null,          // 维修工档案（GET /workers/me）
+    avatarUrl: images.WORKER_AVATAR, // 头像样板图
+    avatarFailed: false,   // 头像加载失败时回退姓名首字
     avatarText: '工',
     statusText: '',        // 在职状态文案
     completedCount: 0,     // 完成工单数
@@ -40,6 +43,11 @@ Page({
       .catch(() => {
         this.setData({ worker: null, loading: false });
       });
+  },
+
+  /** 头像加载失败：回退为姓名首字方块 */
+  onAvatarError() {
+    this.setData({ avatarFailed: true });
   },
 
   /** 加载启用分类（用于擅长分类多选） */

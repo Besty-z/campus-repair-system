@@ -2,9 +2,11 @@
 // 预置管理员账号：手机号 13800000000（数据库已初始化 role=ADMIN），验证码登录即可
 // 课程演示：后端不发真实短信，验证码打印在后端控制台日志（关键字「模拟发送短信验证码」）
 const { post } = require('../../utils/request');
+const images = require('../../utils/images');
 
 Page({
   data: {
+    loginBg: images.LOGIN_BG, // 品牌区背景图
     phone: '',        // 手机号
     code: '',         // 验证码
     counting: 0,      // 倒计时剩余秒数，0 表示可重新发送

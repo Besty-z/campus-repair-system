@@ -188,6 +188,15 @@ page {
   text-align: center;
 }
 
+/* 空状态插图（各页复用） */
+.empty-img {
+  display: block;
+  width: 240rpx;
+  height: 240rpx;
+  margin: 0 auto 26rpx;
+  border-radius: 24rpx;
+}
+
 .empty-icon {
   width: 128rpx;
   height: 128rpx;

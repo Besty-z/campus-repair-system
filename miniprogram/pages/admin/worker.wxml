@@ -10,7 +10,10 @@
   <!-- 维修工卡片列表 -->
   <view class="card worker-card" wx:for="{{list}}" wx:key="id">
     <view class="worker-head">
-      <view class="worker-avatar">{{item.avatarText}}</view>
+      <!-- 列表头像使用样板图，加载失败回退为姓名首字 -->
+      <image wx:if="{{!item.avatarFailed}}" class="worker-avatar-img" src="{{workerAvatar}}"
+             mode="aspectFill" lazy-load data-index="{{index}}" binderror="onAvatarError" />
+      <view wx:else class="worker-avatar">{{item.avatarText}}</view>
       <view class="worker-info">
         <view class="worker-line">
           <text class="worker-name">{{item.name || '未命名'}}</text>

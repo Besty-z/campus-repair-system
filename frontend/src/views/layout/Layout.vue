@@ -1,90 +1,84 @@
 <template>
   <div class="layout">
-    <!-- ================= 左侧深色导航 ================= -->
-    <aside class="sidebar">
-      <div class="side-glow" />
+    <!-- ================= 顶部横向导航 ================= -->
+    <header class="topnav">
+      <div class="nav-glow" />
 
       <!-- 品牌区 -->
-      <div class="side-brand">
-        <div class="side-logo">修</div>
-        <div class="side-brand-text">
+      <router-link to="/" class="nav-brand">
+        <div class="nav-logo">修</div>
+        <div class="nav-brand-text">
           <strong>校园报修</strong>
           <span>Campus Repair</span>
         </div>
-      </div>
+      </router-link>
 
-      <!-- 菜单：按角色分组展示 -->
-      <nav class="side-nav">
-        <template v-for="group in menuGroups" :key="group.label">
-          <p class="nav-group">{{ group.label }}</p>
+      <!-- 横向菜单：按角色过滤，分组之间用细分割线隔开 -->
+      <nav class="nav-menu">
+        <template v-for="menu in menuItems" :key="menu.path">
+          <span v-if="menu.showDivider" class="nav-divider" />
           <router-link
-            v-for="menu in group.items"
-            :key="menu.path"
             :to="menu.path"
             class="nav-item"
             :class="{ active: activeMenu === menu.path }"
           >
-            <span class="nav-icon">
-              <el-icon><component :is="menu.icon" /></el-icon>
-            </span>
+            <el-icon class="nav-icon"><component :is="menu.icon" /></el-icon>
             <span class="nav-text">{{ menu.title }}</span>
-            <span class="nav-bar" />
+            <span class="nav-underline" />
           </router-link>
         </template>
       </nav>
 
-      <!-- 侧边栏底部：当前登录用户卡片 -->
-      <div class="side-user">
-        <div class="side-avatar">{{ avatarText }}</div>
-        <div class="side-user-info">
-          <strong>{{ displayName }}</strong>
-          <span>{{ roleLabel }}</span>
+      <!-- 右侧：角色胶囊（身份切换） + 头像 + 退出 -->
+      <div class="nav-right">
+        <el-dropdown trigger="click" :disabled="switchingRole" @command="handleSwitchRole">
+          <span
+            class="role-chip"
+            :class="[`role-${userStore.role.toLowerCase()}`, { 'is-switching': switchingRole }]"
+          >
+            {{ roleLabel }}
+            <el-icon class="role-caret"><ArrowDown /></el-icon>
+          </span>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item
+                v-for="item in roleOptions"
+                :key="item.value"
+                :command="item.value"
+              >
+                <span class="role-option">
+                  <span>{{ item.label }}</span>
+                  <el-icon v-if="item.value === userStore.role" class="role-check">
+                    <Check />
+                  </el-icon>
+                </span>
+              </el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
+
+        <div class="nav-user">
+          <span class="topbar-avatar">{{ avatarText }}</span>
+          <div class="nav-user-info">
+            <strong>{{ displayName }}</strong>
+            <span>{{ roleLabel }}</span>
+          </div>
         </div>
-        <el-tooltip content="退出登录" placement="top">
+
+        <el-tooltip content="退出登录" placement="bottom">
           <button class="logout-btn" @click="handleLogout">
             <el-icon><SwitchButton /></el-icon>
           </button>
         </el-tooltip>
       </div>
-    </aside>
+    </header>
 
-    <!-- ================= 右侧主区域 ================= -->
+    <!-- ================= 主区域 ================= -->
     <section class="main-wrap">
-      <!-- 顶部栏：页面标题 + 角色标识 -->
-      <header class="topbar">
-        <div class="topbar-title">
-          <h1>{{ currentTitle }}</h1>
-          <p>{{ currentDesc }}</p>
-        </div>
-        <div class="topbar-right">
-          <!-- 角色胶囊：点击展开身份切换下拉（课程演示功能） -->
-          <el-dropdown trigger="click" :disabled="switchingRole" @command="handleSwitchRole">
-            <span
-              class="role-chip"
-              :class="[`role-${userStore.role.toLowerCase()}`, { 'is-switching': switchingRole }]"
-            >
-              {{ roleLabel }}
-              <el-icon class="role-caret"><ArrowDown /></el-icon>
-            </span>
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item
-                  v-for="item in roleOptions"
-                  :key="item.value"
-                  :command="item.value"
-                >
-                  <span class="role-option">
-                    <span>{{ item.label }}</span>
-                    <el-icon v-if="item.value === userStore.role" class="role-check">
-                      <Check />
-                    </el-icon>
-                  </span>
-                </el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
-          </el-dropdown>
-          <span class="topbar-avatar">{{ avatarText }}</span>
-        </div>
+      <!-- 页面标题：跟随路由变化 -->
+      <header class="page-head">
+        <h1>{{ currentTitle }}</h1>
+        <p>{{ currentDesc }}</p>
       </header>
 
       <!-- 路由内容：以角色为 key，切换身份后强制重挂载页面以刷新数据 -->
@@ -175,15 +169,20 @@ const allGroups = [
   }
 ]
 
-// 按当前角色过滤：空分组不展示
-const menuGroups = computed(() =>
-  allGroups
-    .map((group) => ({
-      label: group.label,
-      items: group.items.filter((item) => item.roles.includes(userStore.role))
-    }))
-    .filter((group) => group.items.length > 0)
-)
+// 横向菜单：按角色过滤后拍平，分组首项前加分割线
+const menuItems = computed(() => {
+  const result = []
+  allGroups.forEach((group, groupIndex) => {
+    const items = group.items.filter((item) => item.roles.includes(userStore.role))
+    items.forEach((item, itemIndex) => {
+      result.push({
+        ...item,
+        showDivider: groupIndex > 0 && itemIndex === 0
+      })
+    })
+  })
+  return result
+})
 
 // 当前激活菜单（与路由路径一致）
 const activeMenu = computed(() => route.path)
@@ -245,70 +244,70 @@ async function handleSwitchRole(role) {
 <style scoped>
 .layout {
   display: flex;
+  flex-direction: column;
   min-height: 100vh;
   background: #f4f7fc;
 }
 
-/* ================= 侧边栏 ================= */
-.sidebar {
+/* ================= 横向顶部导航 ================= */
+.topnav {
   position: sticky;
   top: 0;
-  width: 232px;
-  height: 100vh;
-  flex-shrink: 0;
+  z-index: 20;
   display: flex;
-  flex-direction: column;
-  padding: 22px 14px 16px;
-  background: linear-gradient(180deg, #10294a 0%, #0a1728 100%);
-  overflow: hidden;
+  align-items: center;
+  gap: 26px;
+  height: 66px;
+  padding: 0 28px;
+  background: linear-gradient(90deg, #10294a 0%, #0d2038 55%, #0a1728 100%);
+  box-shadow: 0 6px 24px rgba(10, 23, 40, 0.18);
 }
 
-/* 顶部柔光，避免纯色呆板 */
-.side-glow {
+/* 左侧柔光，避免纯色呆板 */
+.nav-glow {
   position: absolute;
-  top: -120px;
-  left: -60px;
-  width: 260px;
+  top: -140px;
+  left: 40px;
+  width: 320px;
   height: 260px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(44, 107, 242, 0.42) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(44, 107, 242, 0.45) 0%, transparent 70%);
   pointer-events: none;
 }
 
-.side-brand {
+.nav-brand {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 0 8px 22px;
-  margin-bottom: 6px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  gap: 11px;
+  flex-shrink: 0;
+  text-decoration: none;
 }
 
-.side-logo {
-  width: 40px;
-  height: 40px;
-  flex-shrink: 0;
+.nav-logo {
+  width: 38px;
+  height: 38px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 12px;
-  font-size: 19px;
+  border-radius: 11px;
+  font-size: 18px;
   font-weight: 700;
   color: #fff;
   background: linear-gradient(135deg, #2c6bf2 0%, #17bfd4 100%);
   box-shadow: 0 8px 18px rgba(44, 107, 242, 0.4);
 }
 
-.side-brand-text strong {
+.nav-brand-text strong {
   display: block;
   font-size: 15px;
   font-weight: 700;
   color: #fff;
   letter-spacing: 0.5px;
+  line-height: 1.2;
 }
 
-.side-brand-text span {
+.nav-brand-text span {
   display: block;
   margin-top: 2px;
   font-size: 11px;
@@ -316,31 +315,39 @@ async function handleSwitchRole(role) {
   letter-spacing: 0.5px;
 }
 
-.side-nav {
+/* 横向菜单容器：窄屏可横向滚动 */
+.nav-menu {
   position: relative;
   flex: 1;
-  padding-top: 10px;
-  overflow-y: auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
 }
 
-.nav-group {
-  margin: 14px 0 8px;
-  padding-left: 12px;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 1px;
-  color: rgba(255, 255, 255, 0.35);
+.nav-menu::-webkit-scrollbar {
+  display: none;
+}
+
+.nav-divider {
+  flex-shrink: 0;
+  width: 1px;
+  height: 20px;
+  margin: 0 10px;
+  background: rgba(255, 255, 255, 0.14);
 }
 
 .nav-item {
   position: relative;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
-  gap: 11px;
-  height: 42px;
-  padding: 0 12px;
-  margin-bottom: 6px;
-  border-radius: 12px;
+  gap: 8px;
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 10px;
   color: rgba(255, 255, 255, 0.7);
   text-decoration: none;
   font-size: 14px;
@@ -348,156 +355,49 @@ async function handleSwitchRole(role) {
 }
 
 .nav-item:hover {
-  background: rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.08);
   color: #fff;
 }
 
 .nav-item.active {
   color: #fff;
   background: rgba(44, 107, 242, 0.32);
-  box-shadow: inset 0 0 0 1px rgba(120, 165, 255, 0.32);
+  box-shadow: inset 0 0 0 1px rgba(120, 165, 255, 0.3);
 }
 
-/* 激活项左侧发光竖条 */
-.nav-bar {
+/* 激活项底部发光横条 */
+.nav-underline {
   position: absolute;
-  left: 0;
-  top: 50%;
-  width: 3px;
-  height: 0;
-  border-radius: 0 4px 4px 0;
-  background: linear-gradient(180deg, #6ea2ff, #23d2e2);
-  transform: translateY(-50%);
-  transition: height 0.25s ease;
+  left: 14px;
+  right: 14px;
+  bottom: -2px;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #6ea2ff, #23d2e2);
+  opacity: 0;
+  transform: scaleX(0.4);
+  transition: opacity 0.22s ease, transform 0.22s ease;
 }
 
-.nav-item.active .nav-bar {
-  height: 20px;
+.nav-item.active .nav-underline {
+  opacity: 1;
+  transform: scaleX(1);
 }
 
 .nav-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 26px;
-  height: 26px;
-  border-radius: 8px;
   font-size: 15px;
-  background: rgba(255, 255, 255, 0.06);
 }
 
 .nav-item.active .nav-icon {
-  background: rgba(255, 255, 255, 0.16);
   color: #8ff0e4;
 }
 
-/* 底部用户卡片 */
-.side-user {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.side-avatar {
-  width: 36px;
-  height: 36px;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 11px;
-  font-size: 14px;
-  font-weight: 700;
-  color: #0a1728;
-  background: linear-gradient(135deg, #8ff0e4, #a9c8ff);
-}
-
-.side-user-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.side-user-info strong {
-  display: block;
-  font-size: 13px;
-  color: #fff;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.side-user-info span {
-  display: block;
-  margin-top: 2px;
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.5);
-}
-
-.logout-btn {
-  width: 30px;
-  height: 30px;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  border-radius: 9px;
-  color: rgba(255, 255, 255, 0.6);
-  background: rgba(255, 255, 255, 0.06);
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.logout-btn:hover {
-  color: #fff;
-  background: rgba(239, 75, 75, 0.8);
-}
-
-/* ================= 主区域 ================= */
-.main-wrap {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.topbar {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 18px 28px;
-  background: rgba(255, 255, 255, 0.82);
-  border-bottom: 1px solid #eef2f9;
-  backdrop-filter: blur(12px);
-}
-
-.topbar-title h1 {
-  margin: 0;
-  font-size: 19px;
-  font-weight: 700;
-  color: #12294a;
-  letter-spacing: -0.2px;
-}
-
-.topbar-title p {
-  margin: 4px 0 0;
-  font-size: 12px;
-  color: #7a879b;
-}
-
-.topbar-right {
+/* 右侧用户区 */
+.nav-right {
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-shrink: 0;
 }
 
 /* 角色胶囊标签：点击展开身份切换 */
@@ -509,15 +409,16 @@ async function handleSwitchRole(role) {
   border-radius: 999px;
   font-size: 12px;
   font-weight: 600;
-  color: #2c6bf2;
-  background: #eef3ff;
+  color: #cfe0ff;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.16);
   cursor: pointer;
   user-select: none;
-  transition: opacity 0.2s ease, box-shadow 0.2s ease;
+  transition: opacity 0.2s ease, background 0.2s ease;
 }
 
 .role-chip:hover {
-  box-shadow: 0 0 0 2px rgba(44, 107, 242, 0.16);
+  background: rgba(255, 255, 255, 0.2);
 }
 
 .role-chip:focus-visible {
@@ -548,78 +449,160 @@ async function handleSwitchRole(role) {
   font-size: 14px;
 }
 
+/* 角色色调：浅色文字 + 半透明底色，与深色导航融合 */
 .role-chip.role-vip {
-  color: #a76a05;
-  background: #fff5e3;
+  color: #ffd591;
+  background: rgba(245, 165, 36, 0.2);
+  border-color: rgba(245, 165, 36, 0.35);
 }
 
 .role-chip.role-worker {
-  color: #0a7f5e;
-  background: #e7f8f2;
+  color: #9ff0d8;
+  background: rgba(15, 181, 131, 0.2);
+  border-color: rgba(15, 181, 131, 0.35);
 }
 
 .role-chip.role-admin {
-  color: #b03636;
-  background: #fdeeee;
+  color: #ffb3b3;
+  background: rgba(239, 75, 75, 0.2);
+  border-color: rgba(239, 75, 75, 0.35);
+}
+
+.nav-user {
+  display: flex;
+  align-items: center;
+  gap: 9px;
 }
 
 .topbar-avatar {
   width: 34px;
   height: 34px;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
   font-size: 13px;
   font-weight: 700;
+  color: #0a1728;
+  background: linear-gradient(135deg, #8ff0e4, #a9c8ff);
+}
+
+.nav-user-info strong {
+  display: block;
+  max-width: 120px;
+  font-size: 13px;
   color: #fff;
-  background: linear-gradient(135deg, #2c6bf2, #17bfd4);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nav-user-info span {
+  display: block;
+  margin-top: 1px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.logout-btn {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 9px;
+  color: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.logout-btn:hover {
+  color: #fff;
+  background: rgba(239, 75, 75, 0.85);
+}
+
+/* ================= 主区域 ================= */
+.main-wrap {
+  flex: 1;
+  width: 100%;
+  max-width: 1600px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.page-head {
+  padding: 22px 28px 0;
+}
+
+.page-head h1 {
+  margin: 0;
+  font-size: 21px;
+  font-weight: 700;
+  color: #12294a;
+  letter-spacing: -0.2px;
+}
+
+.page-head p {
+  margin: 5px 0 0;
+  font-size: 12px;
+  color: #7a879b;
 }
 
 .main-content {
   flex: 1;
-  padding: 22px 28px 40px;
+  padding: 18px 28px 40px;
 }
 
-/* 小屏：侧边栏收窄为图标栏 */
-@media (max-width: 1080px) {
-  .sidebar {
-    width: 76px;
-    padding: 18px 10px 14px;
-  }
-
-  .side-brand-text,
-  .nav-group,
-  .nav-text,
-  .side-user-info {
+/* 中等屏幕：隐藏用户文字，保留头像与角色胶囊 */
+@media (max-width: 1180px) {
+  .nav-user-info {
     display: none;
   }
 
-  .side-brand {
-    justify-content: center;
-    padding: 0 0 18px;
+  .topnav {
+    gap: 18px;
+    padding: 0 18px;
+  }
+}
+
+/* 小屏：隐藏品牌副标题，菜单横向滚动 */
+@media (max-width: 900px) {
+  .nav-brand-text span {
+    display: none;
   }
 
   .nav-item {
-    justify-content: center;
-    padding: 0;
+    padding: 0 11px;
   }
 
-  .side-user {
-    justify-content: center;
-    padding: 10px;
-  }
-
-  .logout-btn {
-    display: none;
+  .page-head {
+    padding: 18px 16px 0;
   }
 
   .main-content {
-    padding: 18px 16px 30px;
+    padding: 16px 16px 30px;
+  }
+}
+
+/* 超小屏：仅保留图标菜单 */
+@media (max-width: 720px) {
+  .nav-brand-text,
+  .nav-text,
+  .nav-divider {
+    display: none;
   }
 
-  .topbar {
-    padding: 14px 16px;
+  .nav-item {
+    padding: 0 12px;
+  }
+
+  .role-chip {
+    padding: 4px 9px;
   }
 }
 </style>

@@ -14,6 +14,21 @@
   overflow: hidden;
 }
 
+/* 背景图铺满品牌区 */
+.hero-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* 深蓝渐变遮罩：压暗背景图，保证品牌文字对比度 */
+.hero-mask {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(160deg, rgba(18, 41, 74, 0.62) 0%, rgba(27, 71, 184, 0.58) 55%, rgba(44, 107, 242, 0.5) 100%);
+}
+
 .hero-circle {
   position: absolute;
   border-radius: 50%;

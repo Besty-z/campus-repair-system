@@ -127,7 +127,12 @@
 
         <div v-loading="loading" class="recent-list">
           <div v-if="!loading && recentOrders.length === 0" class="empty-state">
-            <div class="empty-icon">📋</div>
+            <img
+              class="empty-image"
+              :src="EMPTY_IMAGE"
+              alt="暂无工单插图"
+              loading="lazy"
+            />
             暂无工单记录
           </div>
 
@@ -268,6 +273,7 @@ import { getMyWorkerProfile } from '../../api/worker'
 import { getAds } from '../../api/ad'
 import { listCategories } from '../../api/category'
 import { STATUS_MAP, ROLE_MAP, dictLabel, formatLocation } from '../../utils/dict'
+import { EMPTY_IMAGE } from '../../utils/images'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -911,6 +917,17 @@ onMounted(() => {
 /* 最近工单列表 */
 .recent-list {
   min-height: 120px;
+}
+
+/* 空状态插图：居中缩略图，圆角 + 柔和阴影 */
+.empty-image {
+  display: block;
+  width: 120px;
+  height: 120px;
+  margin: 0 auto 12px;
+  border-radius: 12px;
+  object-fit: cover;
+  box-shadow: 0 8px 20px rgba(18, 41, 74, 0.08);
 }
 
 .recent-item {

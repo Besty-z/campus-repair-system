@@ -168,7 +168,12 @@
 
         <template #empty>
           <div class="empty-state">
-            <div class="empty-icon">📭</div>
+            <img
+              class="empty-image"
+              :src="EMPTY_IMAGE"
+              alt="暂无工单插图"
+              loading="lazy"
+            />
             暂无符合条件的工单
           </div>
         </template>
@@ -284,6 +289,7 @@ import {
   formatLocation
 } from '../../utils/dict'
 import DetailDialog from '../repair/DetailDialog.vue'
+import { EMPTY_IMAGE } from '../../utils/images'
 
 const loading = ref(false)
 const tableData = ref([])
@@ -677,5 +683,16 @@ onMounted(async () => {
   display: flex;
   justify-content: flex-end;
   margin-top: 16px;
+}
+
+/* 空状态插图：居中缩略图，圆角 + 柔和阴影 */
+.empty-image {
+  display: block;
+  width: 120px;
+  height: 120px;
+  margin: 0 auto 12px;
+  border-radius: 12px;
+  object-fit: cover;
+  box-shadow: 0 8px 20px rgba(18, 41, 74, 0.08);
 }
 </style>

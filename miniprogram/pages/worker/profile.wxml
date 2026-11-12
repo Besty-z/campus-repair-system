@@ -5,7 +5,10 @@
     <view class="hero-deco hero-deco-a"></view>
     <view class="hero-deco hero-deco-b"></view>
     <view class="hero-top">
-      <view class="hero-avatar">{{avatarText}}</view>
+      <!-- 头像使用样板图，加载失败回退为姓名首字 -->
+      <image wx:if="{{!avatarFailed}}" class="hero-avatar-img" src="{{avatarUrl}}"
+             mode="aspectFill" lazy-load binderror="onAvatarError" />
+      <view wx:else class="hero-avatar">{{avatarText}}</view>
       <view class="hero-main">
         <view class="hero-name-row">
           <text class="hero-name">{{worker.name || '维修工'}}</text>

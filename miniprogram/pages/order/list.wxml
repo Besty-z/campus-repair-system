@@ -49,7 +49,7 @@
 
   <!-- 空状态 / 加载提示 -->
   <view class="empty-state" wx:if="{{list.length === 0 && !loading}}">
-    <view class="empty-icon">≡</view>
+    <image class="empty-img" src="{{emptyImage}}" mode="aspectFill" lazy-load />
     <view class="empty-text">暂无工单，快去报修吧</view>
     <view class="empty-btn" bindtap="goSubmit">去报修</view>
   </view>

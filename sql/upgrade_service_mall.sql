@@ -80,23 +80,23 @@ CREATE TABLE IF NOT EXISTS ad_banner (
 ALTER TABLE ad_banner MODIFY COLUMN image_url VARCHAR(512) NOT NULL COMMENT '广告图片URL';
 
 -- 4) 同步预设分类的价格与服务图片（可重复执行）
-UPDATE fault_category SET price = 80.00, image_url = 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=plumber%20repairing%20water%20pipe%20and%20light%20switch%20in%20dormitory%2C%20realistic%20photo%2C%20tools%2C%20bright%20natural%20light&image_size=landscape_4_3' WHERE name = '水电类';
-UPDATE fault_category SET price = 70.00, image_url = 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=carpenter%20repairing%20wooden%20door%20lock%20and%20bunk%20bed%20in%20dormitory%2C%20realistic%20photo&image_size=landscape_4_3' WHERE name = '木五金类';
-UPDATE fault_category SET price = 120.00, image_url = 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=worker%20repairing%20cracked%20wall%20and%20loose%20floor%20tiles%20indoors%2C%20realistic%20photo&image_size=landscape_4_3' WHERE name = '土建修缮';
-UPDATE fault_category SET price = 100.00, image_url = 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=technician%20cleaning%20and%20repairing%20wall%20mounted%20air%20conditioner%2C%20realistic%20photo&image_size=landscape_4_3' WHERE name = '空调电器';
-UPDATE fault_category SET price = 90.00, image_url = 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=network%20technician%20installing%20ethernet%20cable%20and%20wifi%20access%20point%20in%20dorm%20room%2C%20realistic%20photo&image_size=landscape_4_3' WHERE name = '网络弱电';
-UPDATE fault_category SET price = 110.00, image_url = 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=worker%20repairing%20street%20lamp%20and%20manhole%20cover%20on%20campus%20road%2C%20realistic%20photo&image_size=landscape_4_3' WHERE name = '公共设施';
-UPDATE fault_category SET price = 90.00, image_url = 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=technician%20repairing%20laptop%20and%20smartphone%20at%20repair%20desk%2C%20realistic%20photo&image_size=landscape_4_3' WHERE name = '家用电子数码';
-UPDATE fault_category SET price = 60.00, image_url = 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=mechanic%20repairing%20electric%20bicycle%20in%20campus%20workshop%2C%20realistic%20photo&image_size=landscape_4_3' WHERE name = '交通工具维修';
-UPDATE fault_category SET price = 130.00, image_url = 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=handyman%20repairing%20bathroom%20plumbing%20and%20window%20screen%2C%20realistic%20photo&image_size=landscape_4_3' WHERE name = '家装&管道维修';
-UPDATE fault_category SET price = 150.00, image_url = 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=IT%20engineer%20maintaining%20server%20rack%20and%20network%20switch%20in%20data%20center%2C%20realistic%20photo&image_size=landscape_4_3' WHERE name = '工业/机房运维';
-UPDATE fault_category SET price = 70.00, image_url = 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=craftsman%20repairing%20leather%20shoes%20and%20watch%20at%20workbench%2C%20realistic%20photo&image_size=landscape_4_3' WHERE name = '其他小众维修';
+UPDATE fault_category SET price = 80.00, image_url = 'http://localhost:8080/api/uploads/samples/service/water_1.jpg' WHERE name = '水电类';
+UPDATE fault_category SET price = 70.00, image_url = 'http://localhost:8080/api/uploads/samples/service/wood_1.jpg' WHERE name = '木五金类';
+UPDATE fault_category SET price = 120.00, image_url = 'http://localhost:8080/api/uploads/samples/service/civil_1.jpg' WHERE name = '土建修缮';
+UPDATE fault_category SET price = 100.00, image_url = 'http://localhost:8080/api/uploads/samples/service/ac_1.jpg' WHERE name = '空调电器';
+UPDATE fault_category SET price = 90.00, image_url = 'http://localhost:8080/api/uploads/samples/service/network_1.jpg' WHERE name = '网络弱电';
+UPDATE fault_category SET price = 110.00, image_url = 'http://localhost:8080/api/uploads/samples/service/public_1.jpg' WHERE name = '公共设施';
+UPDATE fault_category SET price = 90.00, image_url = 'http://localhost:8080/api/uploads/samples/service/digital_1.jpg' WHERE name = '家用电子数码';
+UPDATE fault_category SET price = 60.00, image_url = 'http://localhost:8080/api/uploads/samples/service/vehicle_1.jpg' WHERE name = '交通工具维修';
+UPDATE fault_category SET price = 130.00, image_url = 'http://localhost:8080/api/uploads/samples/service/renovation_1.jpg' WHERE name = '家装&管道维修';
+UPDATE fault_category SET price = 150.00, image_url = 'http://localhost:8080/api/uploads/samples/service/idc_1.jpg' WHERE name = '工业/机房运维';
+UPDATE fault_category SET price = 70.00, image_url = 'http://localhost:8080/api/uploads/samples/service/misc_1.jpg' WHERE name = '其他小众维修';
 
 -- 5) 插入首页广告（按 title 判重，已存在则跳过）
 SET @ad_exists = (SELECT COUNT(*) FROM ad_banner WHERE title = '校园上门维修，1 小时响应');
 INSERT INTO ad_banner (title, subtitle, image_url, sort, status)
 SELECT '校园上门维修，1 小时响应', '宿舍与公共区域全覆盖，专业师傅上门',
-       'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Campus%20repair%20service%20banner%2C%20friendly%20technician%20holding%20toolbox%2C%20modern%20university%20dormitory%2C%20blue%20gradient%20background%2C%20clean%20professional%20photo%2C%20wide%20composition&image_size=landscape_16_9',
+       'http://localhost:8080/api/uploads/samples/ads/ad-campus_1.jpg',
        1, 1
 FROM DUAL
 WHERE @ad_exists = 0;
@@ -104,7 +104,7 @@ WHERE @ad_exists = 0;
 SET @ad_exists = (SELECT COUNT(*) FROM ad_banner WHERE title = '夜间紧急报修，师傅随时待命');
 INSERT INTO ad_banner (title, subtitle, image_url, sort, status)
 SELECT '夜间紧急报修，师傅随时待命', '水管爆裂、跳闸断电，优先安排处理',
-       'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=24%20hour%20emergency%20repair%20banner%2C%20electrician%20working%20at%20night%20with%20headlamp%2C%20campus%20building%2C%20dramatic%20blue%20lighting%2C%20professional%20photo%2C%20wide%20composition&image_size=landscape_16_9',
+       'http://localhost:8080/api/uploads/samples/ads/ad-night_1.jpg',
        2, 1
 FROM DUAL
 WHERE @ad_exists = 0;
@@ -112,7 +112,15 @@ WHERE @ad_exists = 0;
 SET @ad_exists = (SELECT COUNT(*) FROM ad_banner WHERE title = '开通会员，全部服务 8 折');
 INSERT INTO ad_banner (title, subtitle, image_url, sort, status)
 SELECT '开通会员，全部服务 8 折', '最多 5 张图 · 预约上门 · 紧急优先',
-       'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=VIP%20membership%20promotion%20banner%2C%20premium%20home%20repair%20service%2C%20golden%20and%20blue%20gradient%2C%20technician%20and%20student%20handshake%2C%20clean%20modern%20photo%2C%20wide%20composition&image_size=landscape_16_9',
+       'http://localhost:8080/api/uploads/samples/ads/ad-vip_1.jpg',
        3, 1
 FROM DUAL
 WHERE @ad_exists = 0;
+
+-- 6) 已存在广告的历史数据同步为内置样板图（可重复执行）
+UPDATE ad_banner SET image_url = 'http://localhost:8080/api/uploads/samples/ads/ad-campus_1.jpg'
+WHERE title = '校园上门维修，1 小时响应';
+UPDATE ad_banner SET image_url = 'http://localhost:8080/api/uploads/samples/ads/ad-night_1.jpg'
+WHERE title = '夜间紧急报修，师傅随时待命';
+UPDATE ad_banner SET image_url = 'http://localhost:8080/api/uploads/samples/ads/ad-vip_1.jpg'
+WHERE title = '开通会员，全部服务 8 折';

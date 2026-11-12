@@ -1,11 +1,13 @@
 // 我的工单列表（tabBar 页）：状态筛选 + 下拉刷新 + 上拉分页
 const { get } = require('../../utils/request');
 const util = require('../../utils/util');
+const images = require('../../utils/images');
 
 const PAGE_SIZE = 10;
 
 Page({
   data: {
+    emptyImage: images.EMPTY_IMAGE, // 空状态插图
     tabs: [
       { label: '全部', value: '' },
       { label: '待接单', value: 'PENDING' },

@@ -30,7 +30,16 @@
         </div>
 
         <div class="profile-head">
-          <span class="profile-avatar">{{ avatarText }}</span>
+          <!-- 圆形头像：加载失败时回退为渐变文字头像 -->
+          <img
+            v-if="!avatarFailed"
+            class="profile-avatar-img"
+            :src="WORKER_AVATAR"
+            :alt="`${profile.name || '维修工'}头像`"
+            loading="lazy"
+            @error="avatarFailed = true"
+          />
+          <span v-else class="profile-avatar">{{ avatarText }}</span>
           <div class="profile-name">
             <strong>{{ profile.name || '-' }}</strong>
             <span>{{ profile.phone || '-' }}</span>
@@ -102,11 +111,14 @@ import { ElMessage } from 'element-plus'
 import { CircleCheck, Star, ChatDotRound } from '@element-plus/icons-vue'
 import { getMyWorkerProfile, updateMyWorkerProfile } from '../../api/worker'
 import { listCategories } from '../../api/category'
+import { WORKER_AVATAR } from '../../utils/images'
 
 const loading = ref(false)
 const saving = ref(false)
 const profile = ref({})
 const categoryOptions = ref([])
+// 头像图片是否加载失败，失败后回退为渐变文字头像
+const avatarFailed = ref(false)
 
 // 编辑表单：简介 + 擅长分类（分类 ID 数组）
 const form = reactive({
@@ -192,6 +204,16 @@ onMounted(async () => {
   font-weight: 700;
   color: #fff;
   background: linear-gradient(135deg, #3fd0a2, #0fb583);
+  box-shadow: 0 8px 18px rgba(15, 181, 131, 0.28);
+}
+
+/* 维修工圆形头像：与渐变文字头像同尺寸，柔和阴影 */
+.profile-avatar-img {
+  width: 56px;
+  height: 56px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  object-fit: cover;
   box-shadow: 0 8px 18px rgba(15, 181, 131, 0.28);
 }
 

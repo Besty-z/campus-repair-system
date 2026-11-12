@@ -2,10 +2,12 @@
 const { get } = require('../../utils/request');
 const util = require('../../utils/util');
 const role = require('../../utils/role');
+const images = require('../../utils/images');
 
 Page({
   data: {
     userInfo: null,
+    emptyImage: images.EMPTY_IMAGE, // 最近工单空态插图
     roleText: '',
     isVip: false,
     isAdmin: false,
@@ -20,10 +22,11 @@ Page({
       { value: '98%', label: '好评率' },
       { value: '1 小时', label: '快速响应' }
     ],
+    // 3 条 banner 各对应一张样板背景图
     banners: [
-      { tag: '校园报修', title: '报修一键提交', desc: '宿舍楼与校园公共区域全覆盖' },
-      { tag: '会员优先', title: '预约上门时间', desc: '紧急工单优先安排，处理更及时' },
-      { tag: '进度透明', title: '全程状态可查', desc: '待接单、维修中、已完成一目了然' }
+      { tag: '校园报修', title: '报修一键提交', desc: '宿舍楼与校园公共区域全覆盖', img: images.BANNER_IMAGES[0] },
+      { tag: '会员优先', title: '预约上门时间', desc: '紧急工单优先安排，处理更及时', img: images.BANNER_IMAGES[1] },
+      { tag: '进度透明', title: '全程状态可查', desc: '待接单、维修中、已完成一目了然', img: images.BANNER_IMAGES[2] }
     ],
     recentOrders: [],
     loading: false

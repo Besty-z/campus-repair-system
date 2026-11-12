@@ -11,8 +11,13 @@
 
       <div v-loading="loading" class="pool-body">
         <div v-if="!loading && poolList.length === 0" class="empty-state">
-          <div class="empty-icon">📭</div>
-          暂无可抢工单，稍后再来看看吧
+          <img
+            class="empty-image"
+            :src="EMPTY_IMAGE"
+            alt="暂无可抢工单插图"
+            loading="lazy"
+          />
+          暂时没有可抢的工单
         </div>
 
         <div v-else class="pool-grid">
@@ -80,6 +85,7 @@ import { reactive, ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getWorkerPool, acceptWorkerOrder } from '../../api/order'
 import { formatLocation } from '../../utils/dict'
+import { EMPTY_IMAGE } from '../../utils/images'
 
 const loading = ref(false)
 const poolList = ref([])
@@ -298,5 +304,16 @@ onMounted(loadData)
   display: flex;
   justify-content: flex-end;
   margin-top: 16px;
+}
+
+/* 空状态插图：居中缩略图，圆角 + 柔和阴影 */
+.empty-image {
+  display: block;
+  width: 120px;
+  height: 120px;
+  margin: 0 auto 12px;
+  border-radius: 12px;
+  object-fit: cover;
+  box-shadow: 0 8px 20px rgba(18, 41, 74, 0.08);
 }
 </style>

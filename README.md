@@ -155,8 +155,9 @@ npm run dev
 8. **界面设计**：网页端与小程序统一采用一套设计语言——品牌渐变（`#2c6bf2 → #17bfd4`）、深色侧边栏、大圆角卡片、胶囊状态标签与柔和投影；状态色固定为待接单琥珀 `#f5a524`、维修中品牌蓝 `#2c6bf2`、已完成薄荷绿 `#0fb583`、驳回红 `#ef4b4b`。网页端全局样式集中在 `frontend/src/styles/theme.css`，小程序全局样式集中在 `miniprogram/app.wxss`。
 9. **维修工与派单/抢单**：维修工档案存于 `repair_worker`，擅长分类通过 `repair_worker_category` 关联；工单 `worker_id` 记录负责维修工。管理员可指定维修工（派单），维修工也可在抢单大厅领取未指派的待接单工单（抢单），两者都写入 `worker_id`；维修工只能操作本人任务，完成后由报修人评分（`rating_score/rating_comment/rating_time`），档案统计实时汇总完成数与平均评分。
    > 已有数据库升级请执行：`mysql --default-character-set=utf8mb4 -u root -p -e "source sql/upgrade_worker.sql"`（新增维修工档案表、擅长分类表与工单维修工/评分类字段；脚本可重复执行）。
-10. **服务价格与广告位**：`fault_category` 增加 `price`（基础服务价）与 `image_url`（服务照片），首页与提交页明码标价；提交报修时后端按所选分类价格求和并写入 `repair_order.estimated_price`，VIP 自动按 **8 折**计算（保留两位），选择「其他」则为面议。首页广告位数据来自 `ad_banner`（标题、副标题、图片、排序、启用状态），接口 `GET /ads` 按 `sort` 升序返回启用广告，图片使用远程生成地址。
-   > 已有数据库升级请执行：`mysql --default-character-set=utf8mb4 -u root -p -e "source sql/upgrade_service_mall.sql"`（新增价格/图片/预估费用字段与广告位表，并同步 11 个分类价格与服务图片；脚本可重复执行）。
+10. **服务价格与广告位**：`fault_category` 增加 `price`（基础服务价）与 `image_url`（服务照片），首页与提交页明码标价；提交报修时后端按所选分类价格求和并写入 `repair_order.estimated_price`，VIP 自动按 **8 折**计算（保留两位），选择「其他」则为面议。首页广告位数据来自 `ad_banner`（标题、副标题、图片、排序、启用状态），接口 `GET /ads` 按 `sort` 升序返回启用广告。
+    > 样板图片（3 张广告图、11 张服务分类图、登录页/空状态/维修工头像/小程序轮播等）已内置在 `backend/uploads/samples/`，通过后端静态映射 `/uploads/**` 提供，地址形如 `http://localhost:8080/api/uploads/samples/service/water_1.jpg`；不依赖外网，也不受小程序域名白名单影响（真机预览时只需后端可访问）。
+    > 已有数据库升级请执行：`mysql --default-character-set=utf8mb4 -u root -p -e "source sql/upgrade_service_mall.sql"`（新增价格/图片/预估费用字段与广告位表，并同步 11 个分类价格与服务图片；脚本可重复执行）。
 
 ## 六、测试
 

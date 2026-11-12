@@ -1,11 +1,13 @@
 // 维修工「抢单大厅」：待接单且未指派工单，紧急优先
 const { get, put } = require('../../utils/request');
 const util = require('../../utils/util');
+const images = require('../../utils/images');
 
 const PAGE_SIZE = 10;
 
 Page({
   data: {
+    emptyImage: images.EMPTY_IMAGE, // 空状态插图
     list: [],          // 抢单池列表（已附加展示字段）
     pageNum: 1,
     hasMore: true,

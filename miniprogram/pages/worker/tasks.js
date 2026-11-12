@@ -1,11 +1,13 @@
 // 维修工「我的任务」：状态筛选 + 下拉刷新 + 触底分页 + 接单 / 完成维修
 const { get, put } = require('../../utils/request');
 const util = require('../../utils/util');
+const images = require('../../utils/images');
 
 const PAGE_SIZE = 10;
 
 Page({
   data: {
+    emptyImage: images.EMPTY_IMAGE, // 空状态插图
     tabs: [
       { label: '全部', value: '' },
       { label: '待接单', value: 'PENDING' },

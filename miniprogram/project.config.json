@@ -1,6 +1,6 @@
 {
   "description": "校园报修预约系统 - 原生微信小程序前端",
-  "appid": "touristappid",
+  "appid": "wx3706de0b1ddb9972",
   "projectname": "校园报修预约系统",
   "libVersion": "3.7.7",
   "compileType": "miniprogram",
@@ -37,7 +37,16 @@
     "disableUseStrict": false,
     "minifyWXML": true,
     "showES6CompileOption": false,
-    "useCompilerPlugins": false
+    "useCompilerPlugins": false,
+    "compileWorklet": false,
+    "localPlugins": false,
+    "condition": false
   },
-  "condition": {}
+  "condition": {},
+  "simulatorPluginLibVersion": {},
+  "packOptions": {
+    "ignore": [],
+    "include": []
+  },
+  "editorSetting": {}
 }
