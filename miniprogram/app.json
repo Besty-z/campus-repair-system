@@ -13,7 +13,8 @@
     "pages/worker/tasks",
     "pages/worker/pool",
     "pages/worker/profile",
-    "pages/admin/worker"
+    "pages/admin/worker",
+    "pages/ai/chat"
   ],
   "window": {
     "navigationBarBackgroundColor": "#2c6bf2",

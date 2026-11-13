@@ -104,7 +104,8 @@ import {
   Tools,
   SwitchButton,
   ArrowDown,
-  Check
+  Check,
+  MagicStick
 } from '@element-plus/icons-vue'
 import { useUserStore } from '../../store/user'
 import { ROLE_MAP } from '../../utils/dict'
@@ -146,7 +147,8 @@ const allGroups = [
       { path: '/', title: '工作台', icon: HomeFilled, roles: ['USER', 'VIP', 'ADMIN'] },
       { path: '/repair/submit', title: '提交报修', icon: EditPen, roles: ['USER', 'VIP'] },
       { path: '/repair/my', title: '我的工单', icon: Tickets, roles: ['USER', 'VIP', 'ADMIN'] },
-      { path: '/stats', title: '报修统计', icon: DataAnalysis, roles: ['VIP'] }
+      { path: '/stats', title: '报修统计', icon: DataAnalysis, roles: ['VIP'] },
+      { path: '/ai/chat', title: 'AI 报修助手', icon: MagicStick, roles: ['USER', 'VIP', 'ADMIN'] }
     ]
   },
   {
@@ -155,7 +157,8 @@ const allGroups = [
       { path: '/', title: '工作台', icon: HomeFilled, roles: ['WORKER'] },
       { path: '/worker/tasks', title: '我的任务', icon: Tickets, roles: ['WORKER'] },
       { path: '/worker/pool', title: '抢单大厅', icon: List, roles: ['WORKER'] },
-      { path: '/worker/profile', title: '我的资料', icon: User, roles: ['WORKER'] }
+      { path: '/worker/profile', title: '我的资料', icon: User, roles: ['WORKER'] },
+      { path: '/ai/chat', title: 'AI 报修助手', icon: MagicStick, roles: ['WORKER'] }
     ]
   },
   {
@@ -202,7 +205,8 @@ const currentDesc = computed(() => {
     '/admin/users': '查看注册用户，开通或取消会员身份',
     '/worker/tasks': '查看分派给我的维修任务，接单并完成维修',
     '/worker/pool': '抢单大厅：待接单且未指派的工单，紧急优先',
-    '/worker/profile': '维护个人简介与擅长分类，查看维修统计'
+    '/worker/profile': '维护个人简介与擅长分类，查看维修统计',
+    '/ai/chat': '智能报修助手：描述故障，获取分类建议与自助排查方案'
   }
   return descMap[route.path] || ''
 })

@@ -94,6 +94,13 @@ const routes = [
         name: 'AdminUsers',
         component: () => import('../views/admin/Users.vue'),
         meta: { title: '用户管理', roles: ['ADMIN'] }
+      },
+      {
+        // AI 智能报修助手（所有角色）
+        path: 'ai/chat',
+        name: 'AiChat',
+        component: () => import('../views/ai/Chat.vue'),
+        meta: { title: 'AI 报修助手' }
       }
     ]
   },

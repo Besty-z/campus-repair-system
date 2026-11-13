@@ -202,6 +202,13 @@ Page({
     wx.navigateTo({ url: '/pages/admin/order' });
   },
 
+  /** AI 智能报修助手 */
+  goAiChat() {
+    if (this.requireLogin()) {
+      wx.navigateTo({ url: '/pages/ai/chat' });
+    }
+  },
+
   /** 维修工：我的任务 */
   goWorkerTasks() {
     if (this.requireLogin()) {

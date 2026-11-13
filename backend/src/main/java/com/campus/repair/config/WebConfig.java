@@ -2,7 +2,9 @@ package com.campus.repair.config;
 
 import com.campus.repair.interceptor.JwtInterceptor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
@@ -82,5 +84,15 @@ public class WebConfig implements WebMvcConfigurer {
             location = location + "/";
         }
         registry.addResourceHandler("/uploads/**").addResourceLocations(location);
+    }
+
+    /**
+     * 注册 RestTemplate Bean，供 AI 大模型客户端调用外部 HTTP 接口。
+     *
+     * @return RestTemplate 实例
+     */
+    @Bean
+    public RestTemplate restTemplate() {
+        return new RestTemplate();
     }
 }

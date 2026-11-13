@@ -1,0 +1,117 @@
+<!-- AI 智能报修助手 -->
+<view class="chat-page">
+  <!-- 顶部栏：标题 + 会话切换 -->
+  <view class="chat-header">
+    <view class="header-left" bindtap="toggleSessionPanel">
+      <text class="header-title">AI 报修助手</text>
+      <text class="header-arrow">▾</text>
+    </view>
+    <view class="header-right">
+      <view class="key-btn {{hasApiKey ? 'key-on' : 'key-off'}}" bindtap="openKeySetting">
+        {{hasApiKey ? 'Key已配' : 'Key未配'}}
+      </view>
+      <view class="header-new" bindtap="handleNewSession">+ 新会话</view>
+    </view>
+  </view>
+
+  <!-- 会话选择面板 -->
+  <view class="session-panel" wx:if="{{showSessionPanel}}">
+    <view class="session-mask" bindtap="toggleSessionPanel"></view>
+    <scroll-view class="session-list" scroll-y>
+      <view
+        wx:for="{{sessions}}"
+        wx:key="id"
+        class="session-item {{currentSessionId === item.id ? 'active' : ''}}"
+        data-id="{{item.id}}"
+        bindtap="selectSession"
+      >
+        <text class="session-title">{{item.title}}</text>
+        <text class="session-del" data-id="{{item.id}}" catchtap="handleDeleteSession">删除</text>
+      </view>
+      <view wx:if="{{sessions.length === 0}}" class="session-empty">暂无会话</view>
+    </scroll-view>
+  </view>
+
+  <!-- 消息列表 -->
+  <scroll-view class="message-list" scroll-y scroll-into-view="{{scrollToView}}" scroll-with-animation>
+    <!-- 空态 -->
+    <view wx:if="{{messages.length === 0 && !thinking}}" class="chat-empty">
+      <view class="empty-icon">AI</view>
+      <view class="empty-title">你好，我是校园报修智能助手</view>
+      <view class="empty-desc">告诉我你的故障，我来帮你判断分类、给出排查建议</view>
+      <view class="quick-prompts">
+        <view
+          wx:for="{{['宿舍水龙头漏水怎么办','空调不制冷了','宿舍突然断电跳闸','WiFi 连不上网']}}"
+          wx:key="*this"
+          class="quick-prompt"
+          data-prompt="{{item}}"
+          bindtap="handleQuickPrompt"
+        >{{item}}</view>
+      </view>
+    </view>
+
+    <!-- 消息 -->
+    <block wx:for="{{messages}}" wx:key="id">
+      <view id="msg-{{item.id}}" class="msg-row {{item.role === 'user' ? 'msg-user' : 'msg-ai'}}">
+        <view class="msg-avatar {{item.role === 'user' ? 'avatar-user' : 'avatar-ai'}}">
+          {{item.role === 'user' ? '我' : 'AI'}}
+        </view>
+        <view class="msg-bubble {{item.role === 'user' ? 'bubble-user' : 'bubble-ai'}}">
+          <text class="msg-content">{{item.content}}</text>
+        </view>
+      </view>
+    </block>
+
+    <!-- 思考中 -->
+    <view wx:if="{{thinking}}" class="msg-row msg-ai">
+      <view class="msg-avatar avatar-ai">AI</view>
+      <view class="msg-bubble bubble-ai thinking-bubble">
+        <view class="dot"></view>
+        <view class="dot"></view>
+        <view class="dot"></view>
+      </view>
+    </view>
+  </scroll-view>
+
+  <!-- 输入区 -->
+  <view class="input-bar">
+    <textarea
+      class="chat-input"
+      value="{{inputText}}"
+      placeholder="描述你遇到的故障…"
+      auto-height
+      maxlength="500"
+      bindinput="onInput"
+      adjust-position
+    />
+    <button
+      class="send-btn {{inputText && !thinking ? '' : 'disabled'}}"
+      disabled="{{!inputText || thinking}}"
+      bindtap="handleSend"
+    >发送</button>
+  </view>
+
+  <!-- API Key 设置弹窗 -->
+  <view class="key-modal" wx:if="{{showKeySetting}}" catchtap="closeKeySetting">
+    <view class="key-modal-mask"></view>
+    <view class="key-modal-box" catchtap="">
+      <view class="key-modal-title">配置 DeepSeek API Key</view>
+      <view class="key-modal-tip">
+        输入你自己的 DeepSeek API Key，仅保存在本机（本地存储），发送消息时随请求透传给后端调用 DeepSeek，不会上传到服务器数据库。若不配置，将使用内置的模拟报修建议。
+      </view>
+      <input
+        class="key-modal-input"
+        type="text"
+        password
+        value="{{keyInput}}"
+        placeholder="sk-..."
+        bindinput="onKeyInput"
+      />
+      <view class="key-modal-actions">
+        <view class="key-btn-clear" bindtap="clearKey">清除</view>
+        <view class="key-btn-cancel" bindtap="closeKeySetting">取消</view>
+        <view class="key-btn-save" bindtap="saveKey">保存</view>
+      </view>
+    </view>
+  </view>
+</view>

@@ -42,6 +42,16 @@ jwt:
 file:
   upload-dir: uploads
 
+# AI 大模型配置：
+# DeepSeekLlmClient 始终作为唯一的 LlmClient 实现生效。
+# 密钥来源优先级：请求体 apiKey（前端/小程序用户配置）> 环境变量 DEEPSEEK_API_KEY。
+# 当两者均为空时，自动回退到 MockLlmClient 的模拟报修建议，助手仍可用。
+# 如需使用服务端统一密钥，请设置环境变量 DEEPSEEK_API_KEY（切勿写入配置文件或提交到仓库）。
+llm:
+  base-url: ${DEEPSEEK_BASE_URL:https://api.deepseek.com}
+  api-key: ${DEEPSEEK_API_KEY:}
+  model: ${DEEPSEEK_MODEL:deepseek-chat}
+
 logging:
   level:
     com.campus.repair: info

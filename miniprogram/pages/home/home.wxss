@@ -262,6 +262,11 @@
   box-shadow: 0 10rpx 22rpx rgba(15, 181, 131, 0.24);
 }
 
+.quick-icon-purple {
+  background: linear-gradient(135deg, #6f5ce0, #a48bff);
+  box-shadow: 0 10rpx 22rpx rgba(111, 92, 224, 0.26);
+}
+
 .quick-name {
   margin-top: 16rpx;
   font-size: 28rpx;
